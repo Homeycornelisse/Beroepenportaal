@@ -11,7 +11,6 @@
   <!-- PDF.js v3 (stabiel met pdfjsLib) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script>
-    // worker voor PDF.js v3
     window.addEventListener("load", () => {
       if (window.pdfjsLib) {
         pdfjsLib.GlobalWorkerOptions.workerSrc =
@@ -35,7 +34,11 @@
     .glass { background: rgba(255,255,255,.9); backdrop-filter: blur(10px); }
     textarea { resize: none; min-height: 80px; border: 1px solid #cbd5e1; }
     textarea:focus { border-color: #f97316; outline: none; box-shadow: 0 0 0 2px rgba(249,115,22,.2); }
-    @media print { .no-print { display:none; } }
+    @media print {
+      .no-print { display:none !important; }
+      #exportView { display:block !important; }
+      body { background: white !important; }
+    }
   </style>
 </head>
 
@@ -55,8 +58,9 @@
         <button id="tabSettingsBtn" class="px-3 py-2 rounded-lg font-bold bg-white border hover:bg-slate-50">Instellingen</button>
 
         <input type="text" id="searchInput" placeholder="Zoek beroep of sector..." class="p-2 border rounded-lg text-sm w-64">
-        <button onclick="window.print()" class="bg-brand-orange text-white px-4 py-2 rounded-lg font-bold shadow-md hover:bg-orange-600 transition">
-          Export PDF
+
+        <button id="exportBtn" class="bg-brand-orange text-white px-4 py-2 rounded-lg font-bold shadow-md hover:bg-orange-600 transition">
+          Export PDF (selectie)
         </button>
       </div>
     </div>
@@ -78,6 +82,11 @@
           <option value="Hoger">Hoger</option>
         </select>
 
+        <select id="selectedFilter" class="p-3 bg-white border rounded-xl text-sm font-semibold shadow-sm">
+          <option value="all">Alles</option>
+          <option value="selected">Alleen geselecteerd</option>
+        </select>
+
         <button id="resetBtn" class="px-4 py-3 rounded-xl bg-white border font-semibold hover:bg-slate-50">
           Filters leegmaken
         </button>
@@ -89,23 +98,23 @@
     </section>
 
     <!-- INSTELLINGEN -->
-    <section id="settingsView" class="hidden">
+    <section id="settingsView" class="hidden no-print">
       <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 max-w-2xl">
         <h2 class="text-xl font-bold text-brand-blue mb-2">Instellingen</h2>
         <p class="text-sm text-slate-600 mb-4">
-          Plak de link van de PDF en klik op “Update”.
-          Werkt dat niet? Upload de PDF hieronder (dat werkt bijna altijd).
+          Upload de UWV PDF. Daarna wordt je portal automatisch gevuld.
         </p>
 
-        <label class="text-sm font-semibold text-slate-700">PDF-link</label>
-        <input id="pdfUrlInput" type="url"
-               placeholder="https://www.uwv.nl/.../kansrijke-beroepen-2025-2026.pdf"
-               class="mt-2 w-full p-3 border rounded-xl text-sm">
+        <div class="mt-2">
+          <label class="text-sm font-semibold text-slate-700">PDF uploaden</label>
+          <input id="pdfFileInput" type="file" accept="application/pdf"
+                 class="mt-2 w-full p-3 border rounded-xl text-sm bg-white">
+          <p class="text-xs text-slate-500 mt-2">
+            Tip: dit werkt ook als een PDF-link geblokkeerd wordt.
+          </p>
+        </div>
 
-        <div class="flex flex-wrap gap-3 mt-4">
-          <button id="savePdfBtn" class="bg-brand-orange text-white px-4 py-2 rounded-lg font-bold hover:bg-orange-600">
-            Update (PDF via link)
-          </button>
+        <div class="flex flex-wrap gap-3 mt-5">
           <button id="useDemoBtn" class="bg-white border px-4 py-2 rounded-lg font-bold hover:bg-slate-50">
             Gebruik demo-data
           </button>
@@ -114,24 +123,24 @@
           </button>
         </div>
 
-        <div class="mt-5">
-          <label class="text-sm font-semibold text-slate-700">Of upload de PDF (aanrader als link blokkeert)</label>
-          <input id="pdfFileInput" type="file" accept="application/pdf"
-                 class="mt-2 w-full p-3 border rounded-xl text-sm bg-white">
-          <p class="text-xs text-slate-500 mt-2">
-            Uploaden werkt ook als een website de PDF niet laat downloaden via JavaScript.
-          </p>
-        </div>
-
         <div id="settingsMsg" class="mt-4 text-sm text-slate-700"></div>
+      </div>
+    </section>
 
-        <div class="mt-6 p-4 rounded-xl bg-slate-50 border text-sm text-slate-700">
-          <div class="font-bold mb-2">Belangrijk</div>
-          <ul class="list-disc ml-5 space-y-1">
-            <li>Open dit bestand via een lokale server (bijv. VS Code Live Server of <span class="font-mono">python -m http.server</span>).</li>
-            <li>Gebruik altijd <span class="font-mono">https://</span> links, geen http.</li>
-          </ul>
+    <!-- EXPORT VIEW (wordt alleen zichtbaar bij print) -->
+    <section id="exportView" class="hidden">
+      <div class="bg-white p-6">
+        <div class="flex items-baseline justify-between gap-4">
+          <h2 class="text-2xl font-bold text-brand-blue">Export: mijn selectie</h2>
+          <div class="text-sm text-slate-600" id="exportMeta"></div>
         </div>
+
+        <div class="mt-4 text-sm text-slate-700">
+          <div><span class="font-bold">Geselecteerd</span> = “Past bij mij” of “Doelgroep-reg.”</div>
+          <div class="text-slate-500">Tip: zet je printer op “Opslaan als PDF”.</div>
+        </div>
+
+        <div id="exportList" class="mt-6 space-y-4"></div>
       </div>
     </section>
 
@@ -139,9 +148,8 @@
 
   <script>
     // ========= OPSLAG =========
-    const STORAGE_KEY = "bp2026_data_v2";
-    const STORAGE_PDF_URL = "bp2026_pdf_url_v2";
-    const STORAGE_USER_STATE = "bp2026_user_state_v2"; // notes + checkboxes per beroep
+    const STORAGE_KEY = "bp2026_data_v3";
+    const STORAGE_USER_STATE = "bp2026_user_state_v3";
 
     // Demo-data (fallback)
     const demoBeroepen = [
@@ -152,26 +160,11 @@
       { s: "Zorg", n: "Verpleegkundigen (MBO/HBO)", lvl: "Middelbaar/Hoger", info: "Algemeen en gespecialiseerd" },
       { s: "Zorg", n: "Doktersassistenten", lvl: "Middelbaar", info: "Praktijkondersteuning" },
       { s: "Zorg", n: "Maatschappelijk werkers", lvl: "Hoger", info: "Sociaal domein" },
-
-      { s: "Bouw", n: "Grondverzet- en Kraanmachinisten", lvl: "Middelbaar", info: "Bediening zwaar materieel" },
       { s: "Bouw", n: "Timmerlieden", lvl: "Middelbaar", info: "Onderhoud en civiele bouw" },
-      { s: "Bouw", n: "Schilders en Glaszetters", lvl: "Middelbaar", info: "Vastgoedonderhoud" },
-
       { s: "Installatie", n: "Elektriciens (incl. zon/laadpalen)", lvl: "Middelbaar", info: "Elektrotechnische installaties" },
-      { s: "Installatie", n: "Loodgieters en CV-monteurs", lvl: "Middelbaar", info: "Gas, water en sanitair" },
-
       { s: "ICT", n: "ICT-servicedeskmedewerkers", lvl: "Middelbaar", info: "Eerste aanspreekpunt techniek" },
-      { s: "ICT", n: "Systeem- en Netwerkbeheerders", lvl: "Middelbaar", info: "Beheer van infrastructuren" },
-      { s: "ICT", n: "Softwareontwikkelaars", lvl: "Hoger", info: "Bouwen van applicaties" },
-      { s: "ICT", n: "Securityspecialisten", lvl: "Hoger", info: "Digitale veiligheid" },
-
-      { s: "Transport - logistiek", n: "Magazijnmedewerkers / Orderpickers", lvl: "Basis", info: "Logistieke afhandeling" },
       { s: "Transport - logistiek", n: "Vrachtwagenchauffeurs", lvl: "Middelbaar", info: "Distributie en transport" },
-      { s: "Transport - logistiek", n: "Logistiek planners", lvl: "Middelbaar", info: "Regie op vervoer" },
-
-      { s: "Onderwijs - pedagogisch", n: "Leerkrachten basisonderwijs", lvl: "Hoger", info: "Onderwijs aan kinderen" },
-      { s: "Veiligheid", n: "Handhavers (BOA)", lvl: "Middelbaar", info: "Openbare ruimte" },
-      { s: "Commercieel – HR - strategie", n: "Klantcontact medewerkers", lvl: "Middelbaar", info: "Klantenservice en support" }
+      { s: "Onderwijs - pedagogisch", n: "Leerkrachten basisonderwijs", lvl: "Hoger", info: "Onderwijs aan kinderen" }
     ];
 
     let beroepen = loadData() || demoBeroepen;
@@ -228,14 +221,6 @@
       document.getElementById("statusLine").textContent = msg || "";
     }
 
-    // ========= HELPERS =========
-    function normalizeName(x) {
-      return (x || "")
-        .replace(/\s+/g, " ")
-        .replace(/\u00A0/g, " ")
-        .trim();
-    }
-
     function escapeHtml(str) {
       return (str || "")
         .replaceAll("&","&amp;")
@@ -245,11 +230,8 @@
         .replaceAll("'","&#039;");
     }
 
-    function cleanBulletName(name) {
-      let n = normalizeName(name);
-      n = n.replace(/\s*[0-9]+(\s*,\s*[0-9]+)*\s*$/, "");
-      n = n.replace(/\s*\u00B9|\u00B2|\u00B3|\u2074|\u2075/g, "");
-      return n.trim();
+    function normalizeName(x) {
+      return (x || "").replace(/\s+/g, " ").replace(/\u00A0/g, " ").trim();
     }
 
     function keyForBeroep(b) {
@@ -262,14 +244,8 @@
       return userState[k];
     }
 
-    function fixHttpsUrl(url) {
-      let u = (url || "").trim();
-      if (!u) return u;
-      // Als iemand per ongeluk "http://" gebruikt, maak er https van
-      if (u.startsWith("http://")) u = "https://" + u.slice("http://".length);
-      // Als iemand "ttps://" typt, zet h ervoor
-      if (u.startsWith("ttps://")) u = "h" + u;
-      return u;
+    function isSelected(entry) {
+      return !!(entry?.like || entry?.doelgroep);
     }
 
     // ========= TABS =========
@@ -299,15 +275,19 @@
     const searchInput = document.getElementById("searchInput");
     const levelFilter = document.getElementById("levelFilter");
     const sectorFilter = document.getElementById("sectorFilter");
+    const selectedFilter = document.getElementById("selectedFilter");
     const resetBtn = document.getElementById("resetBtn");
 
     searchInput.addEventListener("keyup", filterContent);
     levelFilter.addEventListener("change", filterContent);
     sectorFilter.addEventListener("change", filterContent);
+    selectedFilter.addEventListener("change", filterContent);
+
     resetBtn.addEventListener("click", () => {
       searchInput.value = "";
       levelFilter.value = "all";
       sectorFilter.value = "all";
+      selectedFilter.value = "all";
       filterContent();
     });
 
@@ -322,25 +302,26 @@
       const query = (searchInput.value || "").toLowerCase();
       const level = levelFilter.value;
       const sector = sectorFilter.value;
-      render(query, level, sector);
+      const onlySel = selectedFilter.value === "selected";
+      render(query, level, sector, onlySel);
     }
 
-    // ========= LINKS VOOR "MEER INFO" =========
+    // ========= LINKS "MEER INFO" =========
     function werkNlZoekUrl(beroepNaam) {
-      // Deze werkt als zoek-link. Als Werk.nl ooit verandert, heb je ook de Google-knop erbij.
       return `https://www.werk.nl/werkzoekenden/beroepen-en-opleidingen/beroepen/zoeken?zoekterm=${encodeURIComponent(beroepNaam)}`;
     }
-
     function googleZoekUrl(beroepNaam) {
       return `https://www.google.com/search?q=${encodeURIComponent(beroepNaam + " beroep taken opleiding")}`;
     }
 
     // ========= RENDER =========
-    function render(filter = "", level = "all", sector = "all") {
+    function render(filter = "", level = "all", sector = "all", onlySelected = false) {
       const container = document.getElementById("beroepenContainer");
       container.innerHTML = "";
 
       const filtered = beroepen.filter(b => {
+        const entry = getUserEntry(b);
+
         const matchQuery =
           b.n.toLowerCase().includes(filter) ||
           b.s.toLowerCase().includes(filter) ||
@@ -348,7 +329,9 @@
 
         const matchLevel = level === "all" || (b.lvl || "").includes(level);
         const matchSector = sector === "all" || b.s === sector;
-        return matchQuery && matchLevel && matchSector;
+        const matchSelected = !onlySelected || isSelected(entry);
+
+        return matchQuery && matchLevel && matchSector && matchSelected;
       });
 
       setStatus(`Resultaat: ${filtered.length} van ${beroepen.length} beroepen`);
@@ -402,7 +385,7 @@
 
               <a href="${googleZoekUrl(b.n)}" target="_blank" rel="noopener"
                  class="text-[10px] font-bold text-slate-600 hover:text-brand-orange flex items-center gap-1">
-                🔎 Google: beroep uitleg
+                🔎 Google: uitleg
               </a>
             </div>
           </div>
@@ -419,6 +402,8 @@
           userState[k] = userState[k] || { like:false, doelgroep:false, note:"" };
           userState[k][field] = e.target.checked;
           saveUserState();
+          // handig: als je filter “alleen geselecteerd” aan hebt staan, direct bijwerken
+          if (selectedFilter.value === "selected") filterContent();
         });
       });
 
@@ -434,7 +419,38 @@
       });
     }
 
-    // ========= PDF PARSEN =========
+    // ========= PDF INLEZEN (UPLOAD) =========
+    const settingsMsg = document.getElementById("settingsMsg");
+    const pdfFileInput = document.getElementById("pdfFileInput");
+    const useDemoBtn = document.getElementById("useDemoBtn");
+    const clearNotesBtn = document.getElementById("clearNotesBtn");
+
+    function setSettingsMsg(msg, ok=true) {
+      settingsMsg.innerHTML = `<span class="${ok ? "text-emerald-700" : "text-rose-700"} font-semibold">${escapeHtml(msg)}</span>`;
+    }
+
+    function ensurePdfLib() {
+      if (!window.pdfjsLib) throw new Error("PDF-lezer is niet geladen. Check internet of probeer opnieuw.");
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+    }
+
+    async function extractTextFromPdfBytes(arrayBuffer) {
+      ensurePdfLib();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+      let fullText = "";
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        const pageText = content.items.map(it => it.str).join("\n");
+        fullText += "\n" + pageText + "\n";
+      }
+      return fullText;
+    }
+
+    // Slimme (minder strenge) parser: werkt beter bij verschillende PDF layouts
+    // We pakken sector + niveau, en daarna alle “beroep regels” totdat iets nieuws komt.
     const SECTORS = new Set([
       "Bouw",
       "Installatie",
@@ -454,61 +470,16 @@
       "Zorg"
     ]);
 
-    function normalizeLineForCompare(line) {
-      return normalizeName(line)
-        .replaceAll("–","-")
-        .replace(/\s*-\s*/g, " - ")
-        .trim();
-    }
-
-    function levelFromLine(line) {
-      const t = normalizeLineForCompare(line).toLowerCase();
-      if (t.startsWith("basisvakmanschap")) return "Basis";
-      if (t.startsWith("middelbaar beroepsniveau")) return "Middelbaar";
-      if (t.startsWith("hoger / wetenschappelijk")) return "Hoger";
-      return null;
-    }
-
-    function isSectorLine(line) {
-      const t = normalizeLineForCompare(line);
-      for (const s of SECTORS) {
-        if (t === normalizeLineForCompare(s)) return s;
-      }
-      return null;
-    }
-
-    function ensurePdfLib() {
-      if (!window.pdfjsLib) throw new Error("PDF.js is niet geladen. Check je internet of script-tag.");
-      // worker is al gezet in head (maar voor de zekerheid)
-      pdfjsLib.GlobalWorkerOptions.workerSrc =
-        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-    }
-
-    async function extractTextFromPdfBytes(arrayBuffer) {
-      ensurePdfLib();
-      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-
-      let fullText = "";
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const content = await page.getTextContent();
-        const pageText = content.items.map(it => it.str).join("\n");
-        fullText += "\n" + pageText + "\n";
-      }
-      return fullText;
-    }
-
-    async function extractTextFromPdfUrl(url) {
-      const fixed = fixHttpsUrl(url);
-      const resp = await fetch(fixed);
-      if (!resp.ok) throw new Error("PDF downloaden lukt niet. Check of de link klopt of dat de website blokkeert.");
-      const bytes = await resp.arrayBuffer();
-      return extractTextFromPdfBytes(bytes);
-    }
-
-    async function extractTextFromPdfFile(file) {
-      const bytes = await file.arrayBuffer();
-      return extractTextFromPdfBytes(bytes);
+    function looksLikeNoise(line) {
+      const t = line.toLowerCase();
+      return (
+        t.includes("uwv") ||
+        t.includes("kansrijke beroepen") ||
+        t.includes("basisvakmanschap") ||
+        t.includes("middelbaar beroepsniveau") ||
+        t.includes("hoger / wetenschappelijk") ||
+        t.length <= 2
+      );
     }
 
     function parseBeroepenFromText(text) {
@@ -519,32 +490,32 @@
 
       let currentSector = null;
       let currentLevel = null;
-
       const out = [];
 
-      for (const raw of lines) {
-        const sectorHit = isSectorLine(raw);
-        if (sectorHit) {
-          currentSector = sectorHit;
-          currentLevel = null;
-          continue;
+      for (let raw of lines) {
+        // sector herkennen (ruim)
+        for (const s of SECTORS) {
+          if (raw === s || raw.includes(s)) currentSector = s;
         }
 
-        const lvl = levelFromLine(raw);
-        if (lvl) {
-          currentLevel = lvl;
-          continue;
-        }
+        // niveau herkennen (ruim)
+        const lower = raw.toLowerCase();
+        if (lower.includes("basisvakmanschap")) currentLevel = "Basis";
+        if (lower.includes("middelbaar beroepsniveau")) currentLevel = "Middelbaar";
+        if (lower.includes("hoger / wetenschappelijk")) currentLevel = "Hoger";
 
-        // bullets (vaak "▪")
-        if (raw.startsWith("▪")) {
-          const name = cleanBulletName(raw.replace(/^▪\s*/, ""));
-          if (!name) continue;
+        // beroep regel herkennen
+        const cleaned = raw.replace(/^▪\s*/, "").trim();
+        const isBullet = raw.startsWith("▪");
 
-          if (currentSector && currentLevel) {
+        // Neem bullets altijd, en neem ook andere regels als ze niet “ruis” zijn
+        if (currentSector && currentLevel && !looksLikeNoise(cleaned)) {
+          // Kleine extra filter: voorkom dat hele zinnen/headers mee gaan
+          // (dit is bewust mild)
+          if (isBullet || (cleaned.length >= 3 && cleaned.length <= 80)) {
             out.push({
               s: currentSector,
-              n: name,
+              n: cleaned,
               lvl: currentLevel,
               info: "Uit UWV-lijst kansrijke beroepen"
             });
@@ -552,9 +523,9 @@
         }
       }
 
-      // dubbelen weg
-      const seen = new Set();
+      // dubbele eruit
       const unique = [];
+      const seen = new Set();
       for (const b of out) {
         const k = keyForBeroep(b);
         if (seen.has(k)) continue;
@@ -562,6 +533,7 @@
         unique.push(b);
       }
 
+      // sorteren
       const lvlOrder = { "Basis": 1, "Middelbaar": 2, "Hoger": 3 };
       unique.sort((a,b) => {
         const s = a.s.localeCompare(b.s, "nl");
@@ -574,61 +546,19 @@
       return unique;
     }
 
-    // ========= INSTELLINGEN UI =========
-    const pdfUrlInput = document.getElementById("pdfUrlInput");
-    const savePdfBtn = document.getElementById("savePdfBtn");
-    const useDemoBtn = document.getElementById("useDemoBtn");
-    const clearNotesBtn = document.getElementById("clearNotesBtn");
-    const settingsMsg = document.getElementById("settingsMsg");
-    const pdfFileInput = document.getElementById("pdfFileInput");
-
-    function setSettingsMsg(msg, ok=true) {
-      settingsMsg.innerHTML = `<span class="${ok ? "text-emerald-700" : "text-rose-700"} font-semibold">${escapeHtml(msg)}</span>`;
-    }
-
-    savePdfBtn.addEventListener("click", async () => {
-      const url = fixHttpsUrl(pdfUrlInput.value || "");
-      if (!url) {
-        setSettingsMsg("Vul eerst een PDF-link in.", false);
-        return;
-      }
-
-      setSettingsMsg("Bezig met PDF ophalen en inlezen…", true);
-
-      try {
-        localStorage.setItem(STORAGE_PDF_URL, url);
-
-        const text = await extractTextFromPdfUrl(url);
-        const parsed = parseBeroepenFromText(text);
-
-        if (!parsed.length) {
-          setSettingsMsg("Ik kon geen beroepen vinden in deze PDF. Probeer anders uploaden.", false);
-          return;
-        }
-
-        saveData(parsed);
-        refreshSectorDropdown();
-        filterContent();
-
-        setSettingsMsg(`Klaar! ${parsed.length} beroepen zijn ingeladen via link.`, true);
-        showPortal();
-      } catch (e) {
-        setSettingsMsg(`Mislukt: ${e.message} (Tip: probeer uploaden)`, false);
-      }
-    });
-
     pdfFileInput.addEventListener("change", async () => {
       const file = pdfFileInput.files?.[0];
       if (!file) return;
 
-      setSettingsMsg("Bezig met PDF upload inlezen…", true);
+      setSettingsMsg("Bezig met PDF inlezen…", true);
 
       try {
-        const text = await extractTextFromPdfFile(file);
+        const bytes = await file.arrayBuffer();
+        const text = await extractTextFromPdfBytes(bytes);
         const parsed = parseBeroepenFromText(text);
 
         if (!parsed.length) {
-          setSettingsMsg("Ik kon geen beroepen vinden in deze PDF.", false);
+          setSettingsMsg("Ik kon geen beroepen vinden in deze PDF. Probeer een andere (of zeg het, dan maak ik de parser nog slimmer).", false);
           return;
         }
 
@@ -636,7 +566,7 @@
         refreshSectorDropdown();
         filterContent();
 
-        setSettingsMsg(`Klaar! ${parsed.length} beroepen zijn ingeladen via upload.`, true);
+        setSettingsMsg(`Klaar! ${parsed.length} beroepen zijn ingeladen.`, true);
         showPortal();
       } catch (e) {
         setSettingsMsg(`Mislukt: ${e.message}`, false);
@@ -658,19 +588,99 @@
       filterContent();
     });
 
+    // ========= EXPORT SELECTIE =========
+    const exportBtn = document.getElementById("exportBtn");
+    const exportView = document.getElementById("exportView");
+    const exportList = document.getElementById("exportList");
+    const exportMeta = document.getElementById("exportMeta");
+
+    function buildExport() {
+      // selectie = like of doelgroep aangevinkt
+      const selected = beroepen
+        .map(b => ({ b, entry: getUserEntry(b) }))
+        .filter(x => isSelected(x.entry));
+
+      exportList.innerHTML = "";
+
+      const now = new Date();
+      exportMeta.textContent = `Gemaakt op: ${now.toLocaleString("nl-NL")} • Aantal: ${selected.length}`;
+
+      if (!selected.length) {
+        exportList.innerHTML = `
+          <div class="p-4 border rounded-xl bg-slate-50">
+            <div class="font-bold text-slate-800">Geen selectie</div>
+            <div class="text-slate-600 text-sm mt-1">Vink eerst “Past bij mij” of “Doelgroep-reg.” aan bij een beroep.</div>
+          </div>
+        `;
+        return;
+      }
+
+      // groeperen op sector
+      const groups = {};
+      for (const item of selected) {
+        const s = item.b.s || "Overig";
+        if (!groups[s]) groups[s] = [];
+        groups[s].push(item);
+      }
+
+      const sectorNames = Object.keys(groups).sort((a,b)=>a.localeCompare(b,"nl"));
+
+      for (const sector of sectorNames) {
+        const block = document.createElement("div");
+        block.className = "border rounded-2xl p-4";
+
+        const items = groups[sector];
+
+        block.innerHTML = `
+          <div class="text-sm font-bold text-slate-600 uppercase tracking-wider">${escapeHtml(sector)}</div>
+          <div class="mt-3 space-y-3" id="sec_${escapeHtml(sector).replaceAll(" ","_")}"></div>
+        `;
+
+        exportList.appendChild(block);
+
+        const secDiv = block.querySelector("div[id^='sec_']");
+
+        items.forEach(({b, entry}) => {
+          const tags = [];
+          if (entry.like) tags.push("Past bij mij");
+          if (entry.doelgroep) tags.push("Doelgroep-reg.");
+
+          const note = (entry.note || "").trim();
+
+          const row = document.createElement("div");
+          row.className = "p-3 rounded-xl bg-slate-50 border";
+
+          row.innerHTML = `
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="font-bold text-brand-blue">${escapeHtml(b.n)}</div>
+              <div class="text-xs font-semibold text-slate-600">${escapeHtml(b.lvl || "")}</div>
+            </div>
+            <div class="mt-1 text-xs text-slate-600">${tags.map(t => `• ${escapeHtml(t)}`).join(" ")}</div>
+            <div class="mt-2 text-sm text-slate-800">
+              ${note ? escapeHtml(note) : `<span class="text-slate-500">Geen opmerkingen ingevuld.</span>`}
+            </div>
+          `;
+
+          secDiv.appendChild(row);
+        });
+      }
+    }
+
+    exportBtn.addEventListener("click", () => {
+      buildExport();
+      // exportView blijft normaal hidden, maar bij print wordt hij zichtbaar (via CSS)
+      window.print();
+    });
+
     // ========= START =========
     function init() {
       updateBadge();
-
-      const savedUrl = localStorage.getItem(STORAGE_PDF_URL);
-      if (savedUrl) pdfUrlInput.value = savedUrl;
-
       refreshSectorDropdown();
       render();
 
       const loaded = loadData();
-      if (loaded && loaded.length && loaded !== demoBeroepen) {
-        setStatus(`Data geladen uit opslag: ${beroepen.length} beroepen`);
+      if (loaded && loaded.length) {
+        setStatus(`Data geladen: ${beroepen.length} beroepen`);
       } else {
         setStatus(`Demo-data actief: ${beroepen.length} beroepen`);
       }
