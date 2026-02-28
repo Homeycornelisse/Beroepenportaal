@@ -13,22 +13,14 @@
       theme: {
         extend: {
           fontFamily: { sans: ['DM Sans', 'sans-serif'], mono: ['DM Mono', 'monospace'] },
-          colors: {
-            uwv: { blue: '#003082', mid: '#0055b3', light: '#e8f0fb', orange: '#e85d00', bg: '#f4f6fb' }
-          }
+          colors: { uwv: { blue: '#003082', mid: '#0055b3', light: '#e8f0fb', orange: '#e85d00', bg: '#f4f6fb' } }
         }
       }
     };
   </script>
 
   <style>
-    :root {
-      --blue: #003082;
-      --mid: #0055b3;
-      --orange: #e85d00;
-      --bg: #f4f6fb;
-    }
-
+    :root { --blue:#003082; --mid:#0055b3; --orange:#e85d00; --bg:#f4f6fb; }
     body { font-family: 'DM Sans', sans-serif; }
 
     textarea { resize: none; min-height: 72px; }
@@ -37,14 +29,9 @@
     .card { transition: box-shadow .15s, transform .15s; }
     .card:hover { box-shadow: 0 8px 24px rgba(0,48,130,.1); transform: translateY(-1px); }
 
-    .lvl-basis    { background: #fef3c7; color: #92400e; }
-    .lvl-mid      { background: #dcfce7; color: #166534; }
-    .lvl-hoger    { background: #dbeafe; color: #1e40af; }
-
-    /* Dynamisch gezet via JS */
-    @media print {
-      @page { size: A4 portrait; margin: 12mm; } /* fallback */
-    }
+    .lvl-basis { background:#fef3c7; color:#92400e; }
+    .lvl-mid   { background:#dcfce7; color:#166534; }
+    .lvl-hoger { background:#dbeafe; color:#1e40af; }
 
     /* ===== PRINT / EXPORT ===== */
     @media print {
@@ -59,22 +46,16 @@
         print-color-adjust: exact;
         color: white !important;
       }
-
       .export-sector-header {
         background: #e8f0fb !important;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
       }
-
       .export-lvl-badge {
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
       }
-
-      .export-card {
-        border: 1px solid #e2e8f0 !important;
-        break-inside: avoid;
-      }
+      .export-card { border: 1px solid #e2e8f0 !important; break-inside: avoid; }
     }
 
     .export-banner {
@@ -85,7 +66,7 @@
     }
   </style>
 
-  <!-- Hier zet JS straks @page size in -->
+  <!-- JS zet hier straks @page size in -->
   <style id="printPageStyle"></style>
 </head>
 
@@ -108,7 +89,7 @@
       </div>
 
       <div class="flex flex-wrap gap-2 items-center">
-        <button id="tabPortalBtn"   onclick="showPortal()"   class="px-3 py-1.5 rounded-lg text-sm font-semibold transition-all">Portaal</button>
+        <button id="tabPortalBtn" onclick="showPortal()" class="px-3 py-1.5 rounded-lg text-sm font-semibold transition-all">Portaal</button>
         <button id="tabSettingsBtn" onclick="showSettings()" class="px-3 py-1.5 rounded-lg text-sm font-semibold transition-all">Instellingen</button>
 
         <input type="text" id="searchInput" placeholder="Zoek beroep of sector…"
@@ -133,6 +114,23 @@
 
     <!-- ===== PORTAAL ===== -->
     <section id="portalView">
+
+      <!-- Banner: eerst PDF uploaden -->
+      <div id="pdfBanner" class="hidden no-print mb-5">
+        <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <div class="font-bold text-amber-900">Tip: upload eerst de UWV PDF</div>
+            <div class="text-sm text-amber-800">
+              Dan werken de “Meer info” links precies zoals in de PDF. Zonder upload gebruiken we zoeklinks.
+            </div>
+          </div>
+          <button onclick="showSettings()"
+            class="px-4 py-2 rounded-xl text-sm font-bold text-white hover:opacity-90 transition"
+            style="background:var(--orange);">
+            Ga naar instellingen
+          </button>
+        </div>
+      </div>
 
       <!-- Filters -->
       <div class="flex flex-wrap gap-3 mb-6 no-print">
@@ -204,8 +202,6 @@
 
     <!-- ===== EXPORT VIEW (print only) ===== -->
     <section id="exportView" class="hidden">
-
-      <!-- Banner -->
       <div class="export-banner">
         <div class="flex items-start justify-between flex-wrap gap-4">
           <div>
@@ -220,7 +216,6 @@
         </div>
       </div>
 
-      <!-- Export legend -->
       <div class="flex flex-wrap gap-3 mt-5 mb-6 px-1">
         <div class="flex items-center gap-2 text-xs text-slate-600">
           <span class="px-2 py-0.5 rounded font-bold export-lvl-badge lvl-basis">BASIS</span> Basisvakmanschap
@@ -235,7 +230,6 @@
 
       <div id="exportList" class="space-y-6"></div>
 
-      <!-- Footer -->
       <div class="mt-8 pt-4 border-t border-slate-200 text-xs text-slate-400">
         UWV Kansrijke Beroepen 2025–2026 · uwv.nl · Gegenereerd via Beroepen Portaal
       </div>
@@ -245,14 +239,15 @@
 
   <script>
   // =====================================================================
-  // INGEBOUWDE DATASET (zoals jij had; url is leeg -> fallback zoeklink)
+  // INGEBOUWDE DATASET
   // =====================================================================
+  // ✅ PLAK HIER JOUW VOLLEDIGE DATASET (die enorme lijst) terug.
+  // Belangrijk: laat de .map(...) staan, want die zet info/url netjes.
   const INGEBOUWDE_DATA = [
-    /* --- jouw hele dataset blijft hetzelfde --- */
+    // VOORBEELD (verwijder deze 2 regels als je jouw echte lijst plakt):
+    {s:"Bouw", n:"Grondverzetmachinisten", lvl:"Middelbaar"},
+    {s:"Transport - logistiek", n:"Heftruckchauffeurs", lvl:"Basis"},
   ].map(b => ({...b, info:"Uit UWV-lijst kansrijke beroepen 2025-2026", url:""}));
-
-  // LET OP: je had al een gigantische dataset in je bestand.
-  // Plak die gewoon terug tussen de [ ... ] hierboven (ik laat hem hier weg om de chat niet te slopen).
 
   // =====================================================================
   // STATE
@@ -270,6 +265,7 @@
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ savedAt: new Date().toISOString(), beroepen: d }));
     beroepen = d;
     updateBadge();
+    updatePdfBanner(); // ✅ belangrijk
   }
   function loadUserState() {
     try { return JSON.parse(localStorage.getItem(STORAGE_STATE)) || {}; } catch { return {}; }
@@ -277,6 +273,13 @@
   function saveUserState() {
     localStorage.setItem(STORAGE_STATE, JSON.stringify(userState));
   }
+
+  function esc(s) {
+    return (s||'')
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+  }
+
   function updateBadge() {
     try {
       const r = JSON.parse(localStorage.getItem(STORAGE_KEY));
@@ -284,7 +287,9 @@
       document.getElementById('dataBadge').textContent = dt
         ? `Bijgewerkt: ${dt.toLocaleString('nl-NL')}`
         : `Standaard 2025-2026 · ${beroepen.length} beroepen`;
-    } catch { document.getElementById('dataBadge').textContent = `${beroepen.length} beroepen`; }
+    } catch {
+      document.getElementById('dataBadge').textContent = `${beroepen.length} beroepen`;
+    }
   }
 
   function getKey(b){ return `${b.s}||${b.n}`.toLowerCase(); }
@@ -293,6 +298,27 @@
     const k = getKey(b);
     if (!userState[k]) userState[k] = { like: false, doelgroep: false, note: '' };
     return userState[k];
+  }
+
+  // =====================================================================
+  // BANNER LOGICA (FIX)
+  // =====================================================================
+  // Toon de banner zolang er GEEN echte werk.nl detail-links in je data staan.
+  // (Dus: standaard lijst = banner aan, na PDF upload = banner uit)
+  function hasRealWerkLinks() {
+    return (beroepen || []).some(b => {
+      const u = (b.url || '').trim();
+      return /^https?:\/\/www\.werk\.nl\//i.test(u) && u.length > 20;
+    });
+  }
+
+  function updatePdfBanner() {
+    const banner = document.getElementById('pdfBanner');
+    if (!banner) return;
+
+    // Banner tonen als er nog geen echte links zijn
+    if (hasRealWerkLinks()) banner.classList.add('hidden');
+    else banner.classList.remove('hidden');
   }
 
   // =====================================================================
@@ -343,7 +369,7 @@
   }
 
   // =====================================================================
-  // RENDER CARDS
+  // RENDER
   // =====================================================================
   function lvlBadge(lvl) {
     if ((lvl||'').includes('Hoger')) return 'lvl-hoger';
@@ -356,22 +382,13 @@
     return 'MBO';
   }
 
-  // Fallback zoeklink (als we geen echte PDF-detail-url hebben)
   function werkNlSearchUrl(name) {
     return `https://www.werk.nl/werkzoekenden/beroepen-en-opleidingen/beroepen/zoeken?zoekterm=${encodeURIComponent(name)}`;
   }
 
-  function esc(s) {
-    return (s||'')
-      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-      .replace(/"/g,'&quot;').replace(/'/g,'&#039;');
-  }
-
   function normalizeWerkUrl(url){
-    if (!url) return '';
-    // de PDF gebruikt vaak werk.nl/nl/beroepskeuze/.../details/<id>
-    // die nemen we exact over
-    if (/^https?:\/\/www\.werk\.nl\//i.test(url)) return url;
+    const u = (url||'').trim();
+    if (/^https?:\/\/www\.werk\.nl\//i.test(u)) return u;
     return '';
   }
 
@@ -435,11 +452,9 @@
           </a>
         </div>
       `;
-
       container.appendChild(card);
     });
 
-    // Events
     container.querySelectorAll('input[type=checkbox]').forEach(cb => {
       cb.addEventListener('change', e => {
         const k = e.target.dataset.k, f = e.target.dataset.f;
@@ -449,6 +464,7 @@
         if (document.getElementById('selectedFilter').value === 'selected') filterContent();
       });
     });
+
     container.querySelectorAll('textarea').forEach(ta => {
       ta.addEventListener('input', e => {
         const k = e.target.dataset.k, f = e.target.dataset.f;
@@ -460,21 +476,23 @@
   }
 
   // =====================================================================
-  // PDF PARSER (met echte werk.nl detail-links via annotaties)
+  // PDF PARSER
   // =====================================================================
+  // Let op: dit is dezelfde aanpak als jij al had: we halen beroepen uit bullets,
+  // en werk.nl links via annotaties. (Dat maakt “Meer info” exact.)
   const SECTORS_LIST = [
     "Bouw","Installatie","Voertuigentechniek","Industrie",
     "Transport - logistiek","Veiligheid","Detailhandel","Horeca",
     "Landbouw, natuur en milieu","Schoonmaak - reiniging",
-    "Commercieel \u2013 HR - strategie","Financieel en administratie \u2013 juridisch",
+    "Commercieel – HR - strategie","Financieel en administratie – juridisch",
     "ICT","Overheid","Onderwijs - pedagogisch","Zorg"
   ];
 
   function normalizeSector(t) {
-    return t.replace(/\s*-\s*/g,' - ').replace(/\s*\u2013\s*/g,' \u2013 ').replace(/\s+/g,' ').trim();
+    return (t||'').replace(/\s*-\s*/g,' - ').replace(/\s*–\s*/g,' – ').replace(/\s+/g,' ').trim();
   }
 
-  function findSectors(text) {
+  function findSector(text) {
     const norm = normalizeSector(text);
     for (const s of SECTORS_LIST) {
       if (norm === s) return s;
@@ -492,23 +510,15 @@
   }
 
   function cleanName(t) {
-    // haal eind-cijfertjes weg (voetnootjes) + rare losse leestekens
-    return (t||'')
-      .replace(/[\s,]*\d+[\s,\d]*$/,'')
-      .replace(/\s+/g,' ')
-      .trim();
+    return (t||'').replace(/[\s,]*\d+[\s,\d]*$/,'').replace(/\s+/g,' ').trim();
   }
 
   function isNoise(t) {
     const s = (t||'').trim();
     if (s.length < 5) return true;
     if (/^[\d\s,.\-–]+$/.test(s)) return true;
-    // minimaal 4 letters
     const letters = (s.match(/[A-Za-zÀ-ÿ]/g)||[]).length;
-    if (letters < 4) return true;
-    // typisch “rommel” die je soms ziet bij pdf extract
-    if (/^(,|\.|–|-)+$/.test(s)) return true;
-    return false;
+    return letters < 4;
   }
 
   function isFooter(text) {
@@ -526,10 +536,7 @@
     let bestDy = Infinity;
     for (const l of links) {
       const dy = Math.abs(l.y - y);
-      if (dy <= maxDy && dy < bestDy) {
-        bestDy = dy;
-        best = l;
-      }
+      if (dy <= maxDy && dy < bestDy) { bestDy = dy; best = l; }
     }
     return best ? best.url : '';
   }
@@ -542,13 +549,11 @@
     const allBeroepen = [];
 
     for (let p = 1; p <= pdf.numPages; p++) {
-      // Skip cover (p1), intro (p2), colofon (last)
       if (p === 1 || p === 2 || p === pdf.numPages) continue;
 
-      const page    = await pdf.getPage(p);
+      const page = await pdf.getPage(p);
       const content = await page.getTextContent();
 
-      // Links (annotaties) ophalen: dit zijn de echte werk.nl detail-links uit de PDF
       let ann = [];
       try {
         const anns = await page.getAnnotations();
@@ -560,22 +565,13 @@
             const y = yKey((r[1] + r[3]) / 2);
             return { url, y };
           })
-          // alleen werk.nl links (netter)
           .filter(a => /^https?:\/\/www\.werk\.nl\//i.test(a.url));
-      } catch {
-        ann = [];
-      }
+      } catch { ann = []; }
 
-      // Words met posities
       const items = (content.items || [])
         .filter(it => it.str && it.str.trim())
-        .map(it => ({
-          x: it.transform[4],
-          y: it.transform[5],
-          text: it.str.trim().replace(/\u00A0/g,' ')
-        }));
+        .map(it => ({ x: it.transform[4], y: it.transform[5], text: it.str.trim().replace(/\u00A0/g,' ') }));
 
-      // Groepeer per regel (y)
       const rows = new Map();
       for (const it of items) {
         const ky = yKey(it.y);
@@ -583,72 +579,58 @@
         rows.get(ky).push(it);
       }
 
-      // Maak regels (text + minX)
       const lines = [...rows.entries()]
-        .sort((a,b) => b[0] - a[0]) // boven naar beneden
+        .sort((a,b) => b[0] - a[0])
         .map(([ky, arr]) => {
           arr.sort((a,b) => a.x - b.x);
           const minX = arr[0]?.x ?? 0;
           const text = arr.map(w => w.text).join(' ').replace(/\s+/g,' ').trim();
           return { y: ky, minX, text };
         })
-        // filter lege / footer rommel
         .filter(l => l.text && !isFooter(l.text));
 
       let sector = null;
-      let level  = null;
+      let level = null;
 
-      for (let i = 0; i < lines.length; i++) {
+      for (let i=0; i<lines.length; i++) {
         const line = lines[i];
         const text = line.text;
 
-        // Sector
         if (!text.startsWith('▪')) {
-          const sec = findSectors(text);
+          const sec = findSector(text);
           if (sec) { sector = sec; level = null; continue; }
-
           const lvl = detectLevel(text);
           if (lvl) { level = lvl; continue; }
         }
 
-        // Bullet = beroep
         if (text.startsWith('▪')) {
           const bulletMinX = line.minX;
           let bulletText = text.slice(1).trim();
 
-          // Continuatieregel: alleen als volgende regel ingesprongen is én dichtbij staat
           if (i + 1 < lines.length) {
             const next = lines[i+1];
             const gapY = Math.abs(line.y - next.y);
 
-            const nextIsHeader = !!findSectors(next.text) || !!detectLevel(next.text);
+            const nextIsHeader = !!findSector(next.text) || !!detectLevel(next.text);
             const nextIsBullet = next.text.startsWith('▪');
-
-            const looksIndented = (next.minX > bulletMinX + 10); // echte wrap is meestal ingesprongen
+            const looksIndented = (next.minX > bulletMinX + 10);
             const looksClose = gapY <= 18;
 
             if (!nextIsHeader && !nextIsBullet && looksIndented && looksClose) {
               bulletText = (bulletText + ' ' + next.text).replace(/\s+/g,' ').trim();
-              i++; // we hebben next verbruikt
+              i++;
             }
           }
 
           const name = cleanName(bulletText);
           if (!isNoise(name) && sector && level) {
-            const url = bestLinkForY(ann, line.y, 8); // echte link bij dit bullet punt
-            allBeroepen.push({
-              s: sector,
-              n: name,
-              lvl: level,
-              info: 'Uit UWV-lijst kansrijke beroepen',
-              url: url || ''
-            });
+            const url = bestLinkForY(ann, line.y, 8);
+            allBeroepen.push({ s: sector, n: name, lvl: level, info: 'Uit UWV-lijst kansrijke beroepen', url: url || '' });
           }
         }
       }
     }
 
-    // Dedup
     const seen = new Set();
     return allBeroepen.filter(b => {
       const k = getKey(b);
@@ -666,8 +648,8 @@
     if (!file) return;
     setMsg('⏳ PDF wordt gelezen…', 'slate');
     try {
-      const bytes   = await file.arrayBuffer();
-      const parsed  = await parsePdfFile(bytes);
+      const bytes  = await file.arrayBuffer();
+      const parsed = await parsePdfFile(bytes);
       if (!parsed.length) { setMsg('❌ Geen beroepen gevonden. Probeer de officiële UWV PDF.', 'red'); return; }
       saveData(parsed);
       refreshSectorDropdown();
@@ -683,8 +665,9 @@
     saveData(INGEBOUWDE_DATA);
     refreshSectorDropdown();
     filterContent();
-    setMsg('✅ Standaard data 2025–2026 geladen. (Links zijn dan zoeklinks.)', 'green');
+    setMsg('✅ Standaard data geladen. (Links zijn dan zoeklinks.)', 'green');
     showPortal();
+    updatePdfBanner(); // ✅ belangrijk
   }
 
   function clearUserState() {
@@ -704,9 +687,7 @@
   // EXPORT (print)
   // =====================================================================
   document.getElementById('exportBtn').addEventListener('click', () => {
-    // Zet de gewenste afdruk-stand klaar
     applyPrintOrientation(document.getElementById('printOrientation').value);
-
     buildExport();
     window.print();
   });
@@ -722,22 +703,17 @@
   }
 
   function buildExport() {
-    // ALLEEN "Aangevinkt" (= Past bij mij) exporteren
     const selected = beroepen
       .map(b => ({ b, entry: getEntry(b) }))
-      .filter(x => x.entry.like);
+      .filter(x => x.entry.like); // ✅ alleen aangevinkt
 
     const exportList = document.getElementById('exportList');
     exportList.innerHTML = '';
 
     const now = new Date();
-    document.getElementById('exportMeta').textContent =
-      `Aangemaakt: ${now.toLocaleString('nl-NL')}`;
-
+    document.getElementById('exportMeta').textContent = `Aangemaakt: ${now.toLocaleString('nl-NL')}`;
     document.getElementById('exportSubtitle').textContent =
-      selected.length
-        ? `${selected.length} beroep${selected.length !== 1 ? 'en' : ''} geselecteerd`
-        : 'Geen beroepen geselecteerd';
+      selected.length ? `${selected.length} beroep${selected.length !== 1 ? 'en' : ''} geselecteerd` : 'Geen beroepen geselecteerd';
 
     if (!selected.length) {
       exportList.innerHTML = `
@@ -747,7 +723,6 @@
       return;
     }
 
-    // Group by sector
     const groups = {};
     for (const item of selected) {
       const s = item.b.s || 'Overig';
@@ -756,6 +731,17 @@
     }
 
     const lvlOrder = { Basis:0, Middelbaar:1, Hoger:2 };
+
+    function lvlBadgeCls(lvl){
+      if ((lvl||'').includes('Hoger')) return 'lvl-hoger';
+      if ((lvl||'').includes('Basis')) return 'lvl-basis';
+      return 'lvl-mid';
+    }
+    function lvlLbl(lvl){
+      if ((lvl||'').includes('Hoger')) return 'HBO/WO';
+      if ((lvl||'').includes('Basis')) return 'BASIS';
+      return 'MBO';
+    }
 
     for (const sector of Object.keys(groups).sort((a,b) => a.localeCompare(b,'nl'))) {
       const items = groups[sector].sort((a,b) =>
@@ -779,15 +765,12 @@
         row.className = 'px-5 py-4';
 
         const note = (entry.note || '').trim();
-        const badgeCls = lvlBadge(b.lvl);
-        const badgeLbl = lvlLabel(b.lvl);
-
         const doelgroepTxt = entry.doelgroep ? 'Ja' : 'Nee';
 
         row.innerHTML = `
           <div class="flex items-start justify-between gap-3 mb-1">
             <div class="font-semibold text-sm leading-snug" style="color:var(--blue)">${esc(b.n)}</div>
-            <span class="px-2 py-0.5 rounded text-[10px] font-bold flex-shrink-0 export-lvl-badge ${badgeCls}">${badgeLbl}</span>
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold flex-shrink-0 export-lvl-badge ${lvlBadgeCls(b.lvl)}">${lvlLbl(b.lvl)}</span>
           </div>
 
           <div class="text-xs text-slate-500 mt-1">
@@ -815,6 +798,7 @@
     updateBadge();
     refreshSectorDropdown();
     render();
+    updatePdfBanner(); // ✅ hier zat jouw probleem: deze call ontbrak
   }
 
   window.addEventListener('load', () => {
