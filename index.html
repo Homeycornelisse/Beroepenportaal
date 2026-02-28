@@ -134,23 +134,6 @@
     <!-- ===== PORTAAL ===== -->
     <section id="portalView">
 
-      <!-- Banner: eerst PDF uploaden -->
-<div id="pdfBanner" class="hidden no-print mb-5">
-  <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3">
-    <div>
-      <div class="font-bold text-amber-900">Tip: upload eerst de UWV PDF</div>
-      <div class="text-sm text-amber-800">
-        Dan werken de “Meer info” links precies zoals in de PDF. Zonder upload gebruiken we zoeklinks.
-      </div>
-    </div>
-    <button onclick="showSettings()"
-      class="px-4 py-2 rounded-xl text-sm font-bold text-white hover:opacity-90 transition"
-      style="background:var(--orange);">
-      Ga naar instellingen
-    </button>
-  </div>
-</div>
-
       <!-- Filters -->
       <div class="flex flex-wrap gap-3 mb-6 no-print">
         <select id="sectorFilter" class="p-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium shadow-sm outline-none focus:border-blue-400">
@@ -311,26 +294,6 @@
     if (!userState[k]) userState[k] = { like: false, doelgroep: false, note: '' };
     return userState[k];
   }
-
-  function hasUploadedPdfData() {
-  try {
-    const r = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    // Als er ooit data is opgeslagen via saveData() dan staat savedAt erin
-    // Bij standaard data (alleen in code) staat dat er niet.
-    return !!(r && r.savedAt && Array.isArray(r.beroepen) && r.beroepen.length);
-  } catch {
-    return false;
-  }
-}
-
-function updatePdfBanner() {
-  const banner = document.getElementById('pdfBanner');
-  if (!banner) return;
-
-  // Banner tonen als er nog GEEN geüploade data is
-  if (hasUploadedPdfData()) banner.classList.add('hidden');
-  else banner.classList.remove('hidden');
-}
 
   // =====================================================================
   // TABS
@@ -868,4 +831,3 @@ function updatePdfBanner() {
 
 </body>
 </html>
-
