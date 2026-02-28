@@ -10,14 +10,6 @@
 
   <!-- PDF.js v3 (stabiel met pdfjsLib) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-  <script>
-    window.addEventListener("load", () => {
-      if (window.pdfjsLib) {
-        pdfjsLib.GlobalWorkerOptions.workerSrc =
-          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-      }
-    });
-  </script>
 
   <script>
     tailwind.config = {
@@ -27,13 +19,14 @@
           colors: { brand: { blue: '#1e3a8a', orange: '#f97316', bg: '#f1f5f9' } }
         }
       }
-    }
+    };
   </script>
 
   <style>
     .glass { background: rgba(255,255,255,.9); backdrop-filter: blur(10px); }
     textarea { resize: none; min-height: 80px; border: 1px solid #cbd5e1; }
     textarea:focus { border-color: #f97316; outline: none; box-shadow: 0 0 0 2px rgba(249,115,22,.2); }
+
     @media print {
       .no-print { display:none !important; }
       #exportView { display:block !important; }
@@ -60,7 +53,7 @@
         <input type="text" id="searchInput" placeholder="Zoek beroep of sector..." class="p-2 border rounded-lg text-sm w-64">
 
         <button id="exportBtn" class="bg-brand-orange text-white px-4 py-2 rounded-lg font-bold shadow-md hover:bg-orange-600 transition">
-          Export PDF (selectie)
+          Export PDF (Past bij mij)
         </button>
       </div>
     </div>
@@ -84,7 +77,7 @@
 
         <select id="selectedFilter" class="p-3 bg-white border rounded-xl text-sm font-semibold shadow-sm">
           <option value="all">Alles</option>
-          <option value="selected">Alleen geselecteerd</option>
+          <option value="selected">Alleen “Past bij mij”</option>
         </select>
 
         <button id="resetBtn" class="px-4 py-3 rounded-xl bg-white border font-semibold hover:bg-slate-50">
@@ -102,7 +95,7 @@
       <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 max-w-2xl">
         <h2 class="text-xl font-bold text-brand-blue mb-2">Instellingen</h2>
         <p class="text-sm text-slate-600 mb-4">
-          Upload de UWV PDF. Daarna wordt je portal automatisch gevuld.
+          Upload de UWV PDF. Daarna vult het portaal zichzelf.
         </p>
 
         <div class="mt-2">
@@ -110,7 +103,7 @@
           <input id="pdfFileInput" type="file" accept="application/pdf"
                  class="mt-2 w-full p-3 border rounded-xl text-sm bg-white">
           <p class="text-xs text-slate-500 mt-2">
-            Tip: dit werkt ook als een PDF-link geblokkeerd wordt.
+            Werkt ook op GitHub Pages. (PDF-link inladen is vaak geblokkeerd.)
           </p>
         </div>
 
@@ -127,17 +120,16 @@
       </div>
     </section>
 
-    <!-- EXPORT VIEW (wordt alleen zichtbaar bij print) -->
+    <!-- EXPORT VIEW (alleen zichtbaar bij print) -->
     <section id="exportView" class="hidden">
       <div class="bg-white p-6">
         <div class="flex items-baseline justify-between gap-4">
-          <h2 class="text-2xl font-bold text-brand-blue">Export: mijn selectie</h2>
+          <h2 class="text-2xl font-bold text-brand-blue">Export: Past bij mij</h2>
           <div class="text-sm text-slate-600" id="exportMeta"></div>
         </div>
 
         <div class="mt-4 text-sm text-slate-700">
-          <div><span class="font-bold">Geselecteerd</span> = “Past bij mij” of “Doelgroep-reg.”</div>
-          <div class="text-slate-500">Tip: zet je printer op “Opslaan als PDF”.</div>
+          Alleen beroepen waar jij “Past bij mij” hebt aangevinkt. Opmerkingen worden meegenomen.
         </div>
 
         <div id="exportList" class="mt-6 space-y-4"></div>
@@ -147,24 +139,22 @@
   </main>
 
   <script>
-    // ========= OPSLAG =========
-    const STORAGE_KEY = "bp2026_data_v3";
-    const STORAGE_USER_STATE = "bp2026_user_state_v3";
+    // ========= PDF.js worker =========
+    window.addEventListener("load", () => {
+      if (window.pdfjsLib) {
+        pdfjsLib.GlobalWorkerOptions.workerSrc =
+          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+      }
+    });
 
-    // Demo-data (fallback)
+    // ========= OPSLAG =========
+    const STORAGE_KEY = "bp2026_data_v4";
+    const STORAGE_USER_STATE = "bp2026_user_state_v4";
+
     const demoBeroepen = [
-      { s: "Zorg", n: "Huishoudelijk medewerkers", lvl: "Basis", info: "Thuiszorg en particulieren" },
-      { s: "Zorg", n: "Helpenden", lvl: "Middelbaar", info: "Ondersteuning bij dagelijkse zorg" },
-      { s: "Zorg", n: "(Assistent-)woonbegeleiders", lvl: "Middelbaar", info: "Begeleiding in woonvormen" },
-      { s: "Zorg", n: "Verzorgenden IG", lvl: "Middelbaar", info: "Individuele Gezondheidszorg" },
-      { s: "Zorg", n: "Verpleegkundigen (MBO/HBO)", lvl: "Middelbaar/Hoger", info: "Algemeen en gespecialiseerd" },
-      { s: "Zorg", n: "Doktersassistenten", lvl: "Middelbaar", info: "Praktijkondersteuning" },
-      { s: "Zorg", n: "Maatschappelijk werkers", lvl: "Hoger", info: "Sociaal domein" },
-      { s: "Bouw", n: "Timmerlieden", lvl: "Middelbaar", info: "Onderhoud en civiele bouw" },
-      { s: "Installatie", n: "Elektriciens (incl. zon/laadpalen)", lvl: "Middelbaar", info: "Elektrotechnische installaties" },
-      { s: "ICT", n: "ICT-servicedeskmedewerkers", lvl: "Middelbaar", info: "Eerste aanspreekpunt techniek" },
-      { s: "Transport - logistiek", n: "Vrachtwagenchauffeurs", lvl: "Middelbaar", info: "Distributie en transport" },
-      { s: "Onderwijs - pedagogisch", n: "Leerkrachten basisonderwijs", lvl: "Hoger", info: "Onderwijs aan kinderen" }
+      { s: "Bouw", n: "Timmerlieden (onderhoud en civiele bouw)", lvl: "Middelbaar", info: "Demo", url: "" },
+      { s: "ICT", n: "Softwareontwikkelaars", lvl: "Hoger", info: "Demo", url: "" },
+      { s: "Zorg", n: "Doktersassistenten", lvl: "Middelbaar", info: "Demo", url: "" },
     ];
 
     let beroepen = loadData() || demoBeroepen;
@@ -185,9 +175,7 @@
         if (!raw) return null;
         const obj = JSON.parse(raw);
         return obj?.beroepen || null;
-      } catch {
-        return null;
-      }
+      } catch { return null; }
     }
 
     function updateBadge() {
@@ -198,9 +186,7 @@
         const obj = JSON.parse(raw);
         const dt = obj?.savedAt ? new Date(obj.savedAt) : null;
         badge.textContent = dt ? `• Laatst bijgewerkt: ${dt.toLocaleString("nl-NL")}` : "";
-      } catch {
-        badge.textContent = "";
-      }
+      } catch { badge.textContent = ""; }
     }
 
     function loadUserState() {
@@ -208,9 +194,7 @@
         const raw = localStorage.getItem(STORAGE_USER_STATE);
         if (!raw) return {};
         return JSON.parse(raw) || {};
-      } catch {
-        return {};
-      }
+      } catch { return {}; }
     }
 
     function saveUserState() {
@@ -231,7 +215,7 @@
     }
 
     function normalizeName(x) {
-      return (x || "").replace(/\s+/g, " ").replace(/\u00A0/g, " ").trim();
+      return (x || "").replace(/\u00A0/g, " ").replace(/\s+/g, " ").trim();
     }
 
     function keyForBeroep(b) {
@@ -244,32 +228,28 @@
       return userState[k];
     }
 
-    function isSelected(entry) {
-      return !!(entry?.like || entry?.doelgroep);
+    function isPastBijMij(entry) {
+      return !!(entry?.like);
     }
 
     // ========= TABS =========
     const portalView = document.getElementById("portalView");
     const settingsView = document.getElementById("settingsView");
-    const tabPortalBtn = document.getElementById("tabPortalBtn");
-    const tabSettingsBtn = document.getElementById("tabSettingsBtn");
+    document.getElementById("tabPortalBtn").addEventListener("click", () => showPortal());
+    document.getElementById("tabSettingsBtn").addEventListener("click", () => showSettings());
 
     function showPortal() {
       portalView.classList.remove("hidden");
       settingsView.classList.add("hidden");
-      tabPortalBtn.className = "px-3 py-2 rounded-lg font-bold bg-brand-blue text-white hover:opacity-90";
-      tabSettingsBtn.className = "px-3 py-2 rounded-lg font-bold bg-white border hover:bg-slate-50";
+      document.getElementById("tabPortalBtn").className = "px-3 py-2 rounded-lg font-bold bg-brand-blue text-white hover:opacity-90";
+      document.getElementById("tabSettingsBtn").className = "px-3 py-2 rounded-lg font-bold bg-white border hover:bg-slate-50";
     }
-
     function showSettings() {
       settingsView.classList.remove("hidden");
       portalView.classList.add("hidden");
-      tabSettingsBtn.className = "px-3 py-2 rounded-lg font-bold bg-brand-blue text-white hover:opacity-90";
-      tabPortalBtn.className = "px-3 py-2 rounded-lg font-bold bg-white border hover:bg-slate-50";
+      document.getElementById("tabSettingsBtn").className = "px-3 py-2 rounded-lg font-bold bg-brand-blue text-white hover:opacity-90";
+      document.getElementById("tabPortalBtn").className = "px-3 py-2 rounded-lg font-bold bg-white border hover:bg-slate-50";
     }
-
-    tabPortalBtn.addEventListener("click", showPortal);
-    tabSettingsBtn.addEventListener("click", showSettings);
 
     // ========= FILTERS =========
     const searchInput = document.getElementById("searchInput");
@@ -306,12 +286,11 @@
       render(query, level, sector, onlySel);
     }
 
-    // ========= LINKS "MEER INFO" =========
-    function werkNlZoekUrl(beroepNaam) {
+    // ========= WERK.NL LINKS =========
+    // 1) Als PDF een echte link heeft, gebruiken we die: b.url
+    // 2) Anders fallback: zoekpagina (werkt altijd)
+    function werkNlFallbackZoekUrl(beroepNaam) {
       return `https://www.werk.nl/werkzoekenden/beroepen-en-opleidingen/beroepen/zoeken?zoekterm=${encodeURIComponent(beroepNaam)}`;
-    }
-    function googleZoekUrl(beroepNaam) {
-      return `https://www.google.com/search?q=${encodeURIComponent(beroepNaam + " beroep taken opleiding")}`;
     }
 
     // ========= RENDER =========
@@ -323,13 +302,13 @@
         const entry = getUserEntry(b);
 
         const matchQuery =
-          b.n.toLowerCase().includes(filter) ||
-          b.s.toLowerCase().includes(filter) ||
+          (b.n || "").toLowerCase().includes(filter) ||
+          (b.s || "").toLowerCase().includes(filter) ||
           (b.info || "").toLowerCase().includes(filter);
 
         const matchLevel = level === "all" || (b.lvl || "").includes(level);
         const matchSector = sector === "all" || b.s === sector;
-        const matchSelected = !onlySelected || isSelected(entry);
+        const matchSelected = !onlySelected || isPastBijMij(entry);
 
         return matchQuery && matchLevel && matchSector && matchSelected;
       });
@@ -342,6 +321,8 @@
         const lvlBadgeClass = (b.lvl || "").includes("Hoger")
           ? "bg-blue-100 text-blue-700"
           : ((b.lvl || "").includes("Basis") ? "bg-slate-100 text-slate-700" : "bg-green-100 text-green-700");
+
+        const infoUrl = (b.url && b.url.startsWith("http")) ? b.url : werkNlFallbackZoekUrl(b.n);
 
         const card = document.createElement("div");
         card.className = "bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col justify-between";
@@ -363,7 +344,7 @@
                 <input data-k="${escapeHtml(keyForBeroep(b))}" data-field="like" type="checkbox" class="w-4 h-4 accent-brand-orange" ${entry.like ? "checked" : ""}>
                 <span class="text-xs font-semibold">Past bij mij</span>
               </label>
-              <label class="flex items-center gap-2 cursor-pointer">
+              <label class="flex items-center gap-2 cursor-pointer opacity-70">
                 <input data-k="${escapeHtml(keyForBeroep(b))}" data-field="doelgroep" type="checkbox" class="w-4 h-4 accent-brand-blue" ${entry.doelgroep ? "checked" : ""}>
                 <span class="text-xs font-semibold">Doelgroep-reg.</span>
               </label>
@@ -376,17 +357,11 @@
               class="w-full bg-slate-50 rounded-xl p-3 text-xs">${escapeHtml(entry.note || "")}</textarea>
 
             <div class="flex flex-wrap gap-2 items-center">
-              <a href="${werkNlZoekUrl(b.n)}" target="_blank" rel="noopener"
+              <a href="${infoUrl}" target="_blank" rel="noopener"
                  class="text-[10px] font-bold text-brand-blue hover:text-brand-orange flex items-center gap-1">
-                ℹ️ Werk.nl: meer info
+                ℹ️ Meer info (Werk.nl)
               </a>
-
-              <span class="text-slate-300 text-xs">|</span>
-
-              <a href="${googleZoekUrl(b.n)}" target="_blank" rel="noopener"
-                 class="text-[10px] font-bold text-slate-600 hover:text-brand-orange flex items-center gap-1">
-                🔎 Google: uitleg
-              </a>
+              ${b.url ? `<span class="text-[10px] text-slate-500">• link uit PDF</span>` : `<span class="text-[10px] text-slate-500">• zoeklink</span>`}
             </div>
           </div>
         `;
@@ -394,7 +369,7 @@
         container.appendChild(card);
       });
 
-      // Opslaan checkboxen
+      // checkboxen opslaan
       container.querySelectorAll("input[type=checkbox]").forEach(cb => {
         cb.addEventListener("change", (e) => {
           const k = e.target.getAttribute("data-k");
@@ -402,12 +377,11 @@
           userState[k] = userState[k] || { like:false, doelgroep:false, note:"" };
           userState[k][field] = e.target.checked;
           saveUserState();
-          // handig: als je filter “alleen geselecteerd” aan hebt staan, direct bijwerken
           if (selectedFilter.value === "selected") filterContent();
         });
       });
 
-      // Opslaan notities
+      // notities opslaan
       container.querySelectorAll("textarea").forEach(ta => {
         ta.addEventListener("input", (e) => {
           const k = e.target.getAttribute("data-k");
@@ -430,27 +404,12 @@
     }
 
     function ensurePdfLib() {
-      if (!window.pdfjsLib) throw new Error("PDF-lezer is niet geladen. Check internet of probeer opnieuw.");
+      if (!window.pdfjsLib) throw new Error("PDF-lezer is niet geladen. Ververs de pagina en probeer opnieuw.");
       pdfjsLib.GlobalWorkerOptions.workerSrc =
         "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
     }
 
-    async function extractTextFromPdfBytes(arrayBuffer) {
-      ensurePdfLib();
-      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-
-      let fullText = "";
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const content = await page.getTextContent();
-        const pageText = content.items.map(it => it.str).join("\n");
-        fullText += "\n" + pageText + "\n";
-      }
-      return fullText;
-    }
-
-    // Slimme (minder strenge) parser: werkt beter bij verschillende PDF layouts
-    // We pakken sector + niveau, en daarna alle “beroep regels” totdat iets nieuws komt.
+    // Sectoren komen letterlijk voor in de PDF (kopjes) :contentReference[oaicite:1]{index=1}
     const SECTORS = new Set([
       "Bouw",
       "Installatie",
@@ -470,134 +429,169 @@
       "Zorg"
     ]);
 
-    function looksLikeNoise(line) {
-  const t = (line || "").trim();
-  const lower = t.toLowerCase();
-
-  // lege/te korte regels
-  if (t.length < 4) return true;
-
-  // alleen cijfers/tekens (zoals "3, 4" of "2026")
-  if (/^[0-9\s,.\-–]+$/.test(t)) return true;
-
-  // 1 woord dat een sectornaam is (zoals "Bouw")
-  if (SECTORS.has(t)) return true;
-
-  // typische kopjes/ruis uit de PDF
-  const noiseParts = [
-    "uwv",
-    "kansrijke beroepen",
-    "basisvakmanschap",
-    "middelbaar beroepsniveau",
-    "hoger / wetenschappelijk",
-    "inhoud",
-    "colofon",
-    "bron",
-    "pagina",
-    "tabel",
-    "figuur"
-  ];
-  if (noiseParts.some(p => lower.includes(p))) return true;
-
-  // losse woorden die vaak uit layout komen
-  const weirdSingles = ["midden", "weg", "links", "rechts", "boven", "onder"];
-  if (weirdSingles.includes(lower)) return true;
-
-  // erg veel leestekens of vreemde mix
-  const letters = (t.match(/[A-Za-zÀ-ÿ]/g) || []).length;
-  const digits = (t.match(/[0-9]/g) || []).length;
-  if (letters < 3) return true;          // bijna geen letters = meestal rommel
-  if (digits > 0 && letters < 8) return true; // korte mix met cijfers = vaak voetnoten/paginanrs
-
-  // hele lange zinnen (meestal uitlegtekst)
-  if (t.length > 80) return true;
-
-  return false;
-}
-
-function cleanBeroepLine(raw) {
-  let t = (raw || "").trim();
-
-  // haal bullet-tekens weg
-  t = t.replace(/^▪\s*/, "").trim();
-
-  // haal voetnoot-eindcijfers weg (bijv. "... 3" of "... 3, 4")
-  t = t.replace(/\s*[0-9]+(\s*,\s*[0-9]+)*\s*$/, "").trim();
-
-  // dubbele spaties weg
-  t = t.replace(/\s+/g, " ").trim();
-
-  return t;
-}
-
-function parseBeroepenFromText(text) {
-  const lines = (text || "")
-    .split("\n")
-    .map(l => l.replace(/\u00A0/g, " ").trim())
-    .filter(Boolean);
-
-  let currentSector = null;
-  let currentLevel = null;
-  const out = [];
-
-  for (let raw of lines) {
-    const line = raw.replace(/\s+/g, " ").trim();
-    const lower = line.toLowerCase();
-
-    // sector herkennen (exact of bijna exact)
-    for (const s of SECTORS) {
-      if (line === s) currentSector = s;
+    function isLevelLine(lineLower) {
+      if (lineLower.includes("basisvakmanschap")) return "Basis";
+      if (lineLower.includes("middelbaar beroepsniveau")) return "Middelbaar";
+      if (lineLower.includes("hoger / wetenschappelijk")) return "Hoger";
+      return null;
     }
 
-    // niveau herkennen
-    if (lower.includes("basisvakmanschap")) currentLevel = "Basis";
-    else if (lower.includes("middelbaar beroepsniveau")) currentLevel = "Middelbaar";
-    else if (lower.includes("hoger / wetenschappelijk")) currentLevel = "Hoger";
+    function cleanBulletName(raw) {
+      let t = normalizeName(raw);
+      t = t.replace(/^([▪•\-–])\s*/g, "").trim();
+      t = t.replace(/\s*[0-9]+(\s*,\s*[0-9]+)*\s*$/, "").trim(); // voetnoten/eindcijfers weg
+      return t;
+    }
 
-    // alleen opslaan als we in sector + niveau zitten
-    if (!currentSector || !currentLevel) continue;
+    function looksLikeNoise(name) {
+      const t = (name || "").trim();
+      const lower = t.toLowerCase();
+      if (t.length < 4) return true;
+      if (/^[0-9\s,.\-–]+$/.test(t)) return true;
+      if (SECTORS.has(t)) return true;
+      if (lower.includes("uwv")) return true;
+      if (lower.includes("kansrijke beroepen")) return true;
+      if (lower.includes("algemeen")) return true;
+      if (lower.includes("colofon")) return true;
+      if (lower === "midden" || lower === "weg") return true;
+      // genoeg letters?
+      const letters = (t.match(/[A-Za-zÀ-ÿ]/g) || []).length;
+      if (letters < 4) return true;
+      return false;
+    }
 
-    const cleaned = cleanBeroepLine(line);
+    // Leest per pagina:
+    // - Tekstitems => netjes per regel (y-groepering)
+    // - Link-annotaties => URL per regel (als het info-icoon klikbaar is)
+    async function extractRowsWithLinks(arrayBuffer) {
+      ensurePdfLib();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
 
-    // filter rommel weg
-    if (looksLikeNoise(cleaned)) continue;
+      const allRows = [];
 
-    // extra check: beroep heeft meestal meerdere letters en vaak meerdere woorden
-    const wordCount = cleaned.split(" ").filter(Boolean).length;
-    const letters = (cleaned.match(/[A-Za-zÀ-ÿ]/g) || []).length;
-    if (letters < 4) continue;
-    if (wordCount < 1) continue;
+      for (let p = 1; p <= pdf.numPages; p++) {
+        const page = await pdf.getPage(p);
 
-    out.push({
-      s: currentSector,
-      n: cleaned,
-      lvl: currentLevel,
-      info: "Uit UWV-lijst kansrijke beroepen"
-    });
-  }
+        const [content, annotations] = await Promise.all([
+          page.getTextContent(),
+          page.getAnnotations({ intent: "display" })
+        ]);
 
-  // dubbelen eruit
-  const unique = [];
-  const seen = new Set();
-  for (const b of out) {
-    const k = `${b.s}||${b.n}`.toLowerCase();
-    if (seen.has(k)) continue;
-    seen.add(k);
-    unique.push(b);
-  }
+        // alleen echte url-links pakken
+        const linkAnn = (annotations || [])
+          .filter(a => a && (a.url || a.unsafeUrl) && a.subtype === "Link")
+          .map(a => ({
+            url: a.url || a.unsafeUrl,
+            rect: a.rect // [x1,y1,x2,y2] in PDF coords
+          }));
 
-  // sorteren
-  const lvlOrder = { "Basis": 1, "Middelbaar": 2, "Hoger": 3 };
-  unique.sort((a,b) => {
-    const s = a.s.localeCompare(b.s, "nl");
-    if (s !== 0) return s;
-    const l = (lvlOrder[a.lvl] || 9) - (lvlOrder[b.lvl] || 9);
-    if (l !== 0) return l;
-    return a.n.localeCompare(b.n, "nl");
-  });
+        // tekst groeperen per yKey
+        const rows = new Map();
+        for (const it of (content.items || [])) {
+          const str = (it.str || "").trim();
+          if (!str) continue;
 
-  return unique;
-}
+          const x = it.transform?.[4] ?? 0;
+          const y = it.transform?.[5] ?? 0;
+          const yKey = Math.round(y); // afronden zodat woorden op 1 regel samen komen
+
+          if (!rows.has(yKey)) rows.set(yKey, []);
+          rows.get(yKey).push({ x, y, str });
+        }
+
+        // van boven naar beneden
+        const yKeys = Array.from(rows.keys()).sort((a, b) => b - a);
+
+        for (const yKey of yKeys) {
+          const parts = rows.get(yKey).sort((a, b) => a.x - b.x).map(o => o.str);
+          const line = normalizeName(parts.join(" "));
+
+          if (!line) continue;
+
+          // URL zoeken die "op dezelfde regel" zit:
+          // PDF coords: yKey komt redelijk overeen met rect y (we pakken overlap)
+          let url = "";
+          for (const a of linkAnn) {
+            const y1 = Math.min(a.rect[1], a.rect[3]);
+            const y2 = Math.max(a.rect[1], a.rect[3]);
+            // beetje speling
+            if (yKey >= (y1 - 3) && yKey <= (y2 + 3)) {
+              url = a.url;
+              break;
+            }
+          }
+
+          allRows.push({ line, url });
+        }
+      }
+
+      return allRows;
+    }
+
+    function parseBeroepenFromRows(rows) {
+      let currentSector = null;
+      let currentLevel = null;
+
+      const out = [];
+
+      for (const r of rows) {
+        const line = (r.line || "").trim();
+        const lower = line.toLowerCase();
+
+        // sector exact herkennen
+        if (SECTORS.has(line)) {
+          currentSector = line;
+          continue;
+        }
+
+        // niveau herkennen
+        const lvl = isLevelLine(lower);
+        if (lvl) {
+          currentLevel = lvl;
+          continue;
+        }
+
+        // alleen bulletregels als beroep (dit voorkomt rommel)
+        const isBullet = /^([▪•\-–])\s+/.test(line);
+        if (!isBullet) continue;
+        if (!currentSector || !currentLevel) continue;
+
+        const name = cleanBulletName(line);
+        if (looksLikeNoise(name)) continue;
+
+        out.push({
+          s: currentSector,
+          n: name,
+          lvl: currentLevel,
+          info: "Uit UWV-lijst kansrijke beroepen",
+          url: (r.url && r.url.startsWith("http")) ? r.url : ""
+        });
+      }
+
+      // dubbelen eruit (en als er 2 entries zijn, bewaar die met url)
+      const map = new Map();
+      for (const b of out) {
+        const k = `${b.s}||${b.n}`.toLowerCase();
+        if (!map.has(k)) map.set(k, b);
+        else {
+          const existing = map.get(k);
+          if (!existing.url && b.url) map.set(k, b);
+        }
+      }
+
+      const unique = Array.from(map.values());
+
+      const lvlOrder = { "Basis": 1, "Middelbaar": 2, "Hoger": 3 };
+      unique.sort((a,b) => {
+        const s = a.s.localeCompare(b.s, "nl");
+        if (s !== 0) return s;
+        const l = (lvlOrder[a.lvl] || 9) - (lvlOrder[b.lvl] || 9);
+        if (l !== 0) return l;
+        return a.n.localeCompare(b.n, "nl");
+      });
+
+      return unique;
+    }
 
     pdfFileInput.addEventListener("change", async () => {
       const file = pdfFileInput.files?.[0];
@@ -607,11 +601,11 @@ function parseBeroepenFromText(text) {
 
       try {
         const bytes = await file.arrayBuffer();
-        const text = await extractTextFromPdfBytes(bytes);
-        const parsed = parseBeroepenFromText(text);
+        const rows = await extractRowsWithLinks(bytes);
+        const parsed = parseBeroepenFromRows(rows);
 
         if (!parsed.length) {
-          setSettingsMsg("Ik kon geen beroepen vinden in deze PDF. Probeer een andere (of zeg het, dan maak ik de parser nog slimmer).", false);
+          setSettingsMsg("Ik kon geen beroepen vinden. Probeer een andere PDF-versie of stuur me een screenshot van 1 pagina.", false);
           return;
         }
 
@@ -619,7 +613,8 @@ function parseBeroepenFromText(text) {
         refreshSectorDropdown();
         filterContent();
 
-        setSettingsMsg(`Klaar! ${parsed.length} beroepen zijn ingeladen.`, true);
+        const withLinks = parsed.filter(b => b.url).length;
+        setSettingsMsg(`Klaar! ${parsed.length} beroepen ingeladen. Linkjes uit PDF gevonden: ${withLinks}.`, true);
         showPortal();
       } catch (e) {
         setSettingsMsg(`Mislukt: ${e.message}`, false);
@@ -641,17 +636,15 @@ function parseBeroepenFromText(text) {
       filterContent();
     });
 
-    // ========= EXPORT SELECTIE =========
+    // ========= EXPORT “PAST BIJ MIJ” =========
     const exportBtn = document.getElementById("exportBtn");
-    const exportView = document.getElementById("exportView");
     const exportList = document.getElementById("exportList");
     const exportMeta = document.getElementById("exportMeta");
 
     function buildExport() {
-      // selectie = like of doelgroep aangevinkt
       const selected = beroepen
         .map(b => ({ b, entry: getUserEntry(b) }))
-        .filter(x => isSelected(x.entry));
+        .filter(x => x.entry && x.entry.like === true); // alleen Past bij mij
 
       exportList.innerHTML = "";
 
@@ -662,7 +655,7 @@ function parseBeroepenFromText(text) {
         exportList.innerHTML = `
           <div class="p-4 border rounded-xl bg-slate-50">
             <div class="font-bold text-slate-800">Geen selectie</div>
-            <div class="text-slate-600 text-sm mt-1">Vink eerst “Past bij mij” of “Doelgroep-reg.” aan bij een beroep.</div>
+            <div class="text-slate-600 text-sm mt-1">Vink bij een beroep “Past bij mij” aan en probeer opnieuw.</div>
           </div>
         `;
         return;
@@ -682,24 +675,15 @@ function parseBeroepenFromText(text) {
         const block = document.createElement("div");
         block.className = "border rounded-2xl p-4";
 
-        const items = groups[sector];
-
         block.innerHTML = `
           <div class="text-sm font-bold text-slate-600 uppercase tracking-wider">${escapeHtml(sector)}</div>
-          <div class="mt-3 space-y-3" id="sec_${escapeHtml(sector).replaceAll(" ","_")}"></div>
+          <div class="mt-3 space-y-3"></div>
         `;
 
-        exportList.appendChild(block);
+        const secDiv = block.querySelector("div.mt-3");
 
-        const secDiv = block.querySelector("div[id^='sec_']");
-
-        items.forEach(({b, entry}) => {
-          const tags = [];
-          if (entry.like) tags.push("Past bij mij");
-          if (entry.doelgroep) tags.push("Doelgroep-reg.");
-
+        groups[sector].forEach(({b, entry}) => {
           const note = (entry.note || "").trim();
-
           const row = document.createElement("div");
           row.className = "p-3 rounded-xl bg-slate-50 border";
 
@@ -708,7 +692,6 @@ function parseBeroepenFromText(text) {
               <div class="font-bold text-brand-blue">${escapeHtml(b.n)}</div>
               <div class="text-xs font-semibold text-slate-600">${escapeHtml(b.lvl || "")}</div>
             </div>
-            <div class="mt-1 text-xs text-slate-600">${tags.map(t => `• ${escapeHtml(t)}`).join(" ")}</div>
             <div class="mt-2 text-sm text-slate-800">
               ${note ? escapeHtml(note) : `<span class="text-slate-500">Geen opmerkingen ingevuld.</span>`}
             </div>
@@ -716,12 +699,13 @@ function parseBeroepenFromText(text) {
 
           secDiv.appendChild(row);
         });
+
+        exportList.appendChild(block);
       }
     }
 
     exportBtn.addEventListener("click", () => {
       buildExport();
-      // exportView blijft normaal hidden, maar bij print wordt hij zichtbaar (via CSS)
       window.print();
     });
 
@@ -730,13 +714,7 @@ function parseBeroepenFromText(text) {
       updateBadge();
       refreshSectorDropdown();
       render();
-
-      const loaded = loadData();
-      if (loaded && loaded.length) {
-        setStatus(`Data geladen: ${beroepen.length} beroepen`);
-      } else {
-        setStatus(`Demo-data actief: ${beroepen.length} beroepen`);
-      }
+      setStatus(`Data geladen: ${beroepen.length} beroepen`);
     }
 
     init();
@@ -744,4 +722,3 @@ function parseBeroepenFromText(text) {
 
 </body>
 </html>
-
