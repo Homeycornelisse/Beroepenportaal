@@ -3,514 +3,746 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-  <title>Beroepen Portaal 2026</title>
+  <title>Kansrijke Beroepen Portaal 2025-2026</title>
+
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
   <script>
     tailwind.config = {
       theme: {
         extend: {
-          fontFamily: { sans: ['Inter', 'sans-serif'] },
-          colors: { brand: { blue: '#1e3a8a', orange: '#f97316', bg: '#f1f5f9' } }
+          fontFamily: { sans: ['DM Sans', 'sans-serif'], mono: ['DM Mono', 'monospace'] },
+          colors: {
+            uwv: { blue: '#003082', mid: '#0055b3', light: '#e8f0fb', orange: '#e85d00', bg: '#f4f6fb' }
+          }
         }
       }
     };
   </script>
+
   <style>
-    .glass { background: rgba(255,255,255,.9); backdrop-filter: blur(10px); }
-    textarea { resize: none; min-height: 80px; border: 1px solid #cbd5e1; }
-    textarea:focus { border-color: #f97316; outline: none; box-shadow: 0 0 0 2px rgba(249,115,22,.2); }
+    :root {
+      --blue: #003082;
+      --mid: #0055b3;
+      --orange: #e85d00;
+      --bg: #f4f6fb;
+    }
+
+    body { font-family: 'DM Sans', sans-serif; }
+
+    textarea { resize: none; min-height: 72px; }
+    textarea:focus { outline: none; border-color: var(--orange); box-shadow: 0 0 0 2px rgba(232,93,0,.15); }
+
+    .card { transition: box-shadow .15s, transform .15s; }
+    .card:hover { box-shadow: 0 8px 24px rgba(0,48,130,.1); transform: translateY(-1px); }
+
+    .lvl-basis    { background: #fef3c7; color: #92400e; }
+    .lvl-mid      { background: #dcfce7; color: #166534; }
+    .lvl-hoger    { background: #dbeafe; color: #1e40af; }
+
+    /* ===== PRINT / EXPORT ===== */
     @media print {
-      .no-print { display:none !important; }
-      nav { display:none !important; }
-      #portalView { display:none !important; }
-      #settingsView { display:none !important; }
-      #exportView { display:block !important; }
-      body { background: white !important; }
+      .no-print { display: none !important; }
+      body { background: white !important; margin: 0; padding: 0; }
+      #portalView, #settingsView { display: none !important; }
+      #exportView { display: block !important; }
+
+      .print-page-break { page-break-before: always; }
+
+      /* Export banner */
+      .export-banner {
+        background: linear-gradient(135deg, #003082 0%, #0055b3 100%) !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        color: white !important;
+      }
+
+      .export-sector-header {
+        background: #e8f0fb !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .export-lvl-badge {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .export-card {
+        border: 1px solid #e2e8f0 !important;
+        break-inside: avoid;
+      }
+    }
+
+    /* Export layout styles (visible always, shown on print) */
+    .export-banner {
+      background: linear-gradient(135deg, #003082 0%, #0055b3 100%);
+      padding: 32px 40px;
+      color: white;
+      border-radius: 0 0 16px 16px;
     }
   </style>
 </head>
-<body class="bg-brand-bg text-slate-900 font-sans leading-relaxed">
 
-  <nav class="glass sticky top-0 z-50 border-b border-slate-200 no-print">
-    <div class="container mx-auto px-6 py-4 flex flex-wrap gap-3 justify-between items-center">
+<body class="bg-uwv-bg text-slate-900" style="min-height:100vh;">
+
+  <!-- ===== NAV ===== -->
+  <nav class="bg-white sticky top-0 z-50 border-b border-slate-200 no-print shadow-sm">
+    <div class="max-w-7xl mx-auto px-5 py-3 flex flex-wrap gap-3 justify-between items-center">
       <div class="flex items-center gap-3">
-        <div class="bg-brand-blue p-2 rounded-lg text-white font-bold text-xl">BP</div>
-        <h1 class="text-xl font-bold tracking-tight">Mijn Beroepen Portaal 2026</h1>
-        <span id="dataBadge" class="text-xs font-semibold text-slate-500"></span>
+        <div class="rounded-lg p-1.5" style="background:var(--blue);">
+          <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+            <rect width="26" height="26" rx="6" fill="#003082"/>
+            <text x="5" y="19" font-size="14" font-weight="700" fill="white" font-family="DM Sans">BP</text>
+          </svg>
+        </div>
+        <div>
+          <div class="font-bold text-base leading-tight" style="color:var(--blue)">Kansrijke Beroepen Portaal</div>
+          <div id="dataBadge" class="text-xs text-slate-400 font-mono leading-tight"></div>
+        </div>
       </div>
-      <div class="flex flex-wrap gap-3 items-center">
-        <button id="tabPortalBtn" class="px-3 py-2 rounded-lg font-bold bg-brand-blue text-white hover:opacity-90">Portaal</button>
-        <button id="tabSettingsBtn" class="px-3 py-2 rounded-lg font-bold bg-white border hover:bg-slate-50">Instellingen</button>
-        <input type="text" id="searchInput" placeholder="Zoek beroep of sector..." class="p-2 border rounded-lg text-sm w-64">
-        <button id="exportBtn" class="bg-brand-orange text-white px-4 py-2 rounded-lg font-bold shadow-md hover:bg-orange-600 transition">
-          Export PDF (Past bij mij)
+
+      <div class="flex flex-wrap gap-2 items-center">
+        <button id="tabPortalBtn"   onclick="showPortal()"   class="px-3 py-1.5 rounded-lg text-sm font-semibold transition-all">Portaal</button>
+        <button id="tabSettingsBtn" onclick="showSettings()" class="px-3 py-1.5 rounded-lg text-sm font-semibold transition-all">Instellingen</button>
+
+        <input type="text" id="searchInput" placeholder="Zoek beroep of sector…"
+               class="p-2 border border-slate-200 rounded-lg text-sm w-56 focus:border-blue-400 focus:ring-1 focus:ring-blue-100 outline-none">
+
+        <button id="exportBtn"
+                class="text-white px-4 py-2 rounded-lg text-sm font-bold shadow hover:opacity-90 transition"
+                style="background:var(--orange);">
+          ⬇ Export mijn selectie
         </button>
       </div>
     </div>
   </nav>
 
-  <main class="container mx-auto px-4 py-8 max-w-7xl">
+  <main class="max-w-7xl mx-auto px-4 py-7">
 
+    <!-- ===== PORTAAL ===== -->
     <section id="portalView">
-      <section class="mb-6 flex flex-wrap gap-3 no-print">
-        <select id="sectorFilter" class="p-3 bg-white border rounded-xl text-sm font-semibold shadow-sm">
+
+      <!-- Filters -->
+      <div class="flex flex-wrap gap-3 mb-6 no-print">
+        <select id="sectorFilter" class="p-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium shadow-sm outline-none focus:border-blue-400">
           <option value="all">Alle sectoren</option>
         </select>
-        <select id="levelFilter" class="p-3 bg-white border rounded-xl text-sm font-semibold shadow-sm">
+
+        <select id="levelFilter" class="p-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium shadow-sm outline-none focus:border-blue-400">
           <option value="all">Alle niveaus</option>
           <option value="Basis">Basisvakmanschap</option>
           <option value="Middelbaar">Middelbaar</option>
           <option value="Hoger">Hoger</option>
         </select>
-        <select id="selectedFilter" class="p-3 bg-white border rounded-xl text-sm font-semibold shadow-sm">
-          <option value="all">Alles</option>
-          <option value="selected">Alleen "Past bij mij"</option>
+
+        <select id="selectedFilter" class="p-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium shadow-sm outline-none focus:border-blue-400">
+          <option value="all">Alles tonen</option>
+          <option value="selected">Alleen aangevinkt</option>
         </select>
-        <button id="resetBtn" class="px-4 py-3 rounded-xl bg-white border font-semibold hover:bg-slate-50">Filters leegmaken</button>
-        <div id="statusLine" class="text-sm text-slate-600 flex items-center"></div>
-      </section>
-      <div id="beroepenContainer" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"></div>
+
+        <button onclick="resetFilters()" class="px-3 py-2.5 rounded-xl bg-white border border-slate-200 text-sm font-medium hover:bg-slate-50 transition">
+          Filters wissen
+        </button>
+
+        <div id="statusLine" class="text-sm text-slate-500 flex items-center font-mono"></div>
+      </div>
+
+      <div id="beroepenContainer" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5"></div>
     </section>
 
+    <!-- ===== INSTELLINGEN ===== -->
     <section id="settingsView" class="hidden no-print">
-      <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 max-w-2xl">
-        <h2 class="text-xl font-bold text-brand-blue mb-2">Instellingen</h2>
-        <p class="text-sm text-slate-600 mb-4">
-          De UWV PDF 2025-2026 is ingebouwd — 306 beroepen, correct geparsed met kolom-bewuste logica. Alle beroepsnamen zijn compleet en niveaus zijn correct gekoppeld.
+      <div class="bg-white rounded-2xl p-7 shadow-sm border border-slate-200 max-w-xl">
+        <h2 class="text-lg font-bold mb-1" style="color:var(--blue)">Instellingen</h2>
+        <p class="text-sm text-slate-500 mb-5">
+          Upload de UWV PDF om de gegevens bij te werken. Standaard zijn de beroepen uit de lijst 2025–2026 al ingeladen.
         </p>
-        <div class="mt-4 p-4 rounded-xl bg-slate-50 border">
-          <div class="text-sm font-bold text-slate-700 mb-2">Officiële UWV pagina</div>
+
+        <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 mb-5">
+          <div class="text-sm font-semibold text-slate-700 mb-1">Officiële UWV bron</div>
+          <p class="text-xs text-slate-500 mb-3">Download de nieuwste PDF met kansrijke beroepen.</p>
           <a href="https://www.uwv.nl/nl/arbeidsmarktinformatie/kansen-beroep/kansrijke-beroepen"
              target="_blank" rel="noopener"
-             class="inline-block bg-brand-blue text-white px-4 py-2 rounded-lg font-bold hover:opacity-90">
-            Ga naar UWV pagina
+             class="inline-block text-white px-4 py-2 rounded-lg text-sm font-bold hover:opacity-90 transition"
+             style="background:var(--blue);">
+            Ga naar UWV.nl
           </a>
         </div>
-        <div class="mt-5">
-          <label class="text-sm font-semibold text-slate-700">Nieuwere PDF uploaden (optioneel)</label>
+
+        <div class="mb-4">
+          <label class="text-sm font-semibold text-slate-700 block mb-2">Eigen PDF uploaden</label>
           <input id="pdfFileInput" type="file" accept="application/pdf"
-                 class="mt-2 w-full p-3 border rounded-xl text-sm bg-white">
-          <p class="text-xs text-slate-500 mt-2">
-            De parser herkent de twee kolommen automatisch en koppelt niveaus correct per kolom.
-          </p>
+                 class="w-full p-3 border border-slate-200 rounded-xl text-sm bg-white">
+          <p class="text-xs text-slate-400 mt-1">Parseren kan een paar seconden duren.</p>
         </div>
-        <div class="flex flex-wrap gap-3 mt-5">
-          <button id="useBuiltinBtn" class="bg-brand-blue text-white px-4 py-2 rounded-lg font-bold hover:opacity-90">
-            Herstel ingebouwde data (306 beroepen)
+
+        <div class="flex flex-wrap gap-3">
+          <button onclick="loadDefault()" class="bg-white border border-slate-200 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-slate-50 transition">
+            Standaard 2025–2026 laden
           </button>
-          <button id="clearNotesBtn" class="bg-white border px-4 py-2 rounded-lg font-bold hover:bg-slate-50">
-            Notities/keuzes wissen
+          <button onclick="clearUserState()" class="bg-white border border-slate-200 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-slate-50 transition">
+            Mijn notities wissen
           </button>
         </div>
+
         <div id="settingsMsg" class="mt-4 text-sm"></div>
       </div>
     </section>
 
+    <!-- ===== EXPORT VIEW (print only) ===== -->
     <section id="exportView" class="hidden">
-      <div class="bg-white p-6">
-        <div class="flex items-baseline justify-between gap-4">
-          <h2 class="text-2xl font-bold text-brand-blue">Export: Past bij mij</h2>
-          <div class="text-sm text-slate-600" id="exportMeta"></div>
+
+      <!-- Banner -->
+      <div class="export-banner">
+        <div class="flex items-start justify-between flex-wrap gap-4">
+          <div>
+            <div class="text-xs font-bold uppercase tracking-widest opacity-70 mb-1">Kansrijke Beroepen Portaal 2025–2026</div>
+            <h1 class="text-3xl font-bold mb-1">Mijn geselecteerde beroepen</h1>
+            <div id="exportSubtitle" class="text-sm opacity-80"></div>
+          </div>
+          <div class="text-right">
+            <div class="text-xs opacity-60 mb-1">Bron: UWV</div>
+            <div id="exportMeta" class="text-xs opacity-60"></div>
+          </div>
         </div>
-        <div class="mt-4 text-sm text-slate-700">Alleen beroepen waar jij "Past bij mij" hebt aangevinkt.</div>
-        <div id="exportList" class="mt-6 space-y-4"></div>
+      </div>
+
+      <!-- Export legend -->
+      <div class="flex flex-wrap gap-3 mt-5 mb-6 px-1">
+        <div class="flex items-center gap-2 text-xs text-slate-600">
+          <span class="px-2 py-0.5 rounded font-bold export-lvl-badge lvl-basis">BASIS</span> Basisvakmanschap
+        </div>
+        <div class="flex items-center gap-2 text-xs text-slate-600">
+          <span class="px-2 py-0.5 rounded font-bold export-lvl-badge lvl-mid">MBO</span> Middelbaar beroepsniveau
+        </div>
+        <div class="flex items-center gap-2 text-xs text-slate-600">
+          <span class="px-2 py-0.5 rounded font-bold export-lvl-badge lvl-hoger">HBO/WO</span> Hoger / wetenschappelijk
+        </div>
+      </div>
+
+      <div id="exportList" class="space-y-6"></div>
+
+      <!-- Footer -->
+      <div class="mt-8 pt-4 border-t border-slate-200 text-xs text-slate-400">
+        UWV Kansrijke Beroepen 2025–2026 · uwv.nl · Gegenereerd via Beroepen Portaal
       </div>
     </section>
 
   </main>
 
   <script>
-    window.addEventListener("load", () => {
-      if (window.pdfjsLib)
-        pdfjsLib.GlobalWorkerOptions.workerSrc =
-          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-    });
+  // =====================================================================
+  // INGEBOUWDE DATASET (UWV Kansrijke Beroepen 2025-2026, 248 beroepen)
+  // =====================================================================
+  const INGEBOUWDE_DATA = [{"s":"Bouw","n":"Grondverzetmachinisten","lvl":"Middelbaar"},{"s":"Bouw","n":"Heimachinisten","lvl":"Middelbaar"},{"s":"Bouw","n":"Kraanmachinisten","lvl":"Middelbaar"},{"s":"Bouw","n":"Vaklieden grond-, weg- en waterbouw","lvl":"Middelbaar"},{"s":"Bouw","n":"Rioleringsmedewerkers","lvl":"Middelbaar"},{"s":"Bouw","n":"Stratenmakers","lvl":"Middelbaar"},{"s":"Bouw","n":"Sondeerders en boormeesters grondboring","lvl":"Middelbaar"},{"s":"Bouw","n":"Slopers bouw en asbestverwijderaars","lvl":"Middelbaar"},{"s":"Bouw","n":"Betonwerkers","lvl":"Middelbaar"},{"s":"Bouw","n":"Isoleerders","lvl":"Middelbaar"},{"s":"Bouw","n":"Onderhoudsmedewerkers gebouwen","lvl":"Middelbaar"},{"s":"Bouw","n":"Steigerbouwers","lvl":"Middelbaar"},{"s":"Bouw","n":"Tegelzetters","lvl":"Middelbaar"},{"s":"Bouw","n":"Dakdekkers","lvl":"Middelbaar"},{"s":"Bouw","n":"Timmerlieden (onderhoud en civiele bouw)","lvl":"Middelbaar"},{"s":"Bouw","n":"Schilders","lvl":"Middelbaar"},{"s":"Bouw","n":"Glaszetters","lvl":"Middelbaar"},{"s":"Bouw","n":"Werkplaatstimmermannen, interieurbouwers, standbouwers, wand- en plafondmonteurs","lvl":"Middelbaar"},{"s":"Bouw","n":"Rolluik- en zonweringinstallateurs","lvl":"Middelbaar"},{"s":"Bouw","n":"Landmeters","lvl":"Middelbaar"},{"s":"Bouw","n":"(Hoofd)uitvoerders grond-, weg- en waterbouw","lvl":"Middelbaar"},{"s":"Bouw","n":"Opzichters en beheerders grond-, weg- en waterbouw","lvl":"Middelbaar"},{"s":"Bouw","n":"Werkvoorbereiders en calculatoren grond-, weg- en waterbouw","lvl":"Middelbaar"},{"s":"Bouw","n":"Tekenaars grond-, weg- en waterbouw","lvl":"Middelbaar"},{"s":"Bouw","n":"(Hoofd)uitvoerders bouw en installatietechniek","lvl":"Middelbaar"},{"s":"Bouw","n":"Werkvoorbereiders en calculatoren bouw en installatietechniek","lvl":"Middelbaar"},{"s":"Bouw","n":"Tekenaars bouwkunde en BIM modelleurs","lvl":"Middelbaar"},{"s":"Bouw","n":"Bouwkundig inspecteurs, opzichters en adviseurs (EPA- en BENG adviseurs)","lvl":"Middelbaar"},{"s":"Bouw","n":"Bodemkundig onderzoekers en -saneerders","lvl":"Hoger"},{"s":"Bouw","n":"Adviseurs en ontwerper-constructeurs grond-, weg- en waterbouw","lvl":"Hoger"},{"s":"Bouw","n":"Projectleiders grond-, weg- en waterbouw","lvl":"Hoger"},{"s":"Bouw","n":"Adviseurs en ontwerper-constructeurs bouwkunde","lvl":"Hoger"},{"s":"Bouw","n":"Managers en projectleiders bouw en installatie","lvl":"Hoger"},{"s":"Installatie","n":"Monteurs en leidingleggers gas, water","lvl":"Middelbaar"},{"s":"Installatie","n":"Kabelwerkers en monteurs datacommunicatie","lvl":"Middelbaar"},{"s":"Installatie","n":"Monteurs glasvezel en telecommunicatiesystemen","lvl":"Middelbaar"},{"s":"Installatie","n":"Monteurs laag-, midden- en hoogspanning","lvl":"Middelbaar"},{"s":"Installatie","n":"Loodgieters, installateurs en monteurs gas, water, sanitair, verwarming","lvl":"Middelbaar"},{"s":"Installatie","n":"Elektriciens, installateurs en monteurs elektrische installaties (incl. zonnepanelen en laadpalen)","lvl":"Middelbaar"},{"s":"Installatie","n":"Installateurs en monteurs luchtbehandeling, koeltechniek","lvl":"Middelbaar"},{"s":"Installatie","n":"Monteurs lifttechniek en elektromotoren","lvl":"Middelbaar"},{"s":"Installatie","n":"Monteurs beveiligingsinstallaties","lvl":"Middelbaar"},{"s":"Installatie","n":"Medewerkers technische dienst (elektrotechnisch)","lvl":"Middelbaar"},{"s":"Installatie","n":"Monteurs meet- en regeltechniek en medische elektronica","lvl":"Middelbaar"},{"s":"Installatie","n":"Tekenaars installatietechniek","lvl":"Middelbaar"},{"s":"Installatie","n":"Tekenaars elektrotechniek","lvl":"Middelbaar"},{"s":"Installatie","n":"Werkvoorbereiders en calculatoren elektrotechniek","lvl":"Middelbaar"},{"s":"Installatie","n":"Adviseurs, engineers en projectleiders installatietechniek","lvl":"Hoger"},{"s":"Installatie","n":"Inspecteurs elektrische installaties","lvl":"Hoger"},{"s":"Installatie","n":"Projectleiders elektrotechniek","lvl":"Hoger"},{"s":"Installatie","n":"Engineers, constructeurs en onderzoekers elektrotechnische installaties","lvl":"Hoger"},{"s":"Installatie","n":"Engineers elektronica en meet- en regeltechniek","lvl":"Hoger"},{"s":"Installatie","n":"Telecom engineers","lvl":"Hoger"},{"s":"Voertuigentechniek","n":"Rijwielmonteurs","lvl":"Middelbaar"},{"s":"Voertuigentechniek","n":"Autospuiters","lvl":"Middelbaar"},{"s":"Voertuigentechniek","n":"Autoschadeherstellers (incl. caravan-/campermonteur)","lvl":"Middelbaar"},{"s":"Voertuigentechniek","n":"Automonteurs (personen- en bedrijfswagens)","lvl":"Middelbaar"},{"s":"Voertuigentechniek","n":"Werkplaatschefs auto","lvl":"Middelbaar"},{"s":"Voertuigentechniek","n":"Monteurs mobiele werktuigen (incl. landbouwmachines)","lvl":"Middelbaar"},{"s":"Voertuigentechniek","n":"Elektromonteurs schepen en treinen","lvl":"Middelbaar"},{"s":"Voertuigentechniek","n":"Scheepswerktuigkundigen","lvl":"Middelbaar"},{"s":"Voertuigentechniek","n":"Bedrijfsleiders / ondernemers autogaragebedrijf","lvl":"Middelbaar"},{"s":"Industrie","n":"Verf- en lakspuiters","lvl":"Basis"},{"s":"Industrie","n":"Assemblagemedewerkers","lvl":"Basis"},{"s":"Industrie","n":"Assemblagemonteurs","lvl":"Middelbaar"},{"s":"Industrie","n":"Pijpfitters","lvl":"Middelbaar"},{"s":"Industrie","n":"Plaatwerkers","lvl":"Middelbaar"},{"s":"Industrie","n":"CNC-machinebedieners","lvl":"Middelbaar"},{"s":"Industrie","n":"Conventioneel verspaners en machinebankwerkers","lvl":"Middelbaar"},{"s":"Industrie","n":"CNC-verspaners (inclusief programmeren)","lvl":"Middelbaar"},{"s":"Industrie","n":"Constructiebankwerkers","lvl":"Middelbaar"},{"s":"Industrie","n":"Constructiemedewerkers en carrosseriebouwers","lvl":"Middelbaar"},{"s":"Industrie","n":"Lassers","lvl":"Middelbaar"},{"s":"Industrie","n":"Gespecialiseerd lassers, operators lasrobot","lvl":"Middelbaar"},{"s":"Industrie","n":"Gereedschapsmakers","lvl":"Middelbaar"},{"s":"Industrie","n":"Fijninstrumentmakers en fijnmechanici","lvl":"Middelbaar"},{"s":"Industrie","n":"Machinaal meubelmakers en houtbewerkers","lvl":"Middelbaar"},{"s":"Industrie","n":"(Hoofd)operators proces- en levensmiddelenindustrie","lvl":"Middelbaar"},{"s":"Industrie","n":"Monteurs industriële machines en installaties / mechatronica (installatie, service, storing)","lvl":"Middelbaar"},{"s":"Industrie","n":"Order- en productiebegeleiders industrie (binnendienst)","lvl":"Middelbaar"},{"s":"Industrie","n":"Productieplanners","lvl":"Middelbaar"},{"s":"Industrie","n":"Tekenaars werktuigbouw / machines","lvl":"Middelbaar"},{"s":"Industrie","n":"Werkvoorbereiders en calculatoren werktuigbouw / machines","lvl":"Middelbaar"},{"s":"Industrie","n":"Calculatoren procestechniek","lvl":"Middelbaar"},{"s":"Industrie","n":"Vertegenwoordigers en accountmanagers technische producten","lvl":"Middelbaar"},{"s":"Industrie","n":"Leidinggevenden assemblage en montage metaal- en overige industrie","lvl":"Middelbaar"},{"s":"Industrie","n":"Technisch managers en hoofden technische dienst","lvl":"Middelbaar"},{"s":"Industrie","n":"Adviseurs, (maintenance)engineers en ontwerper-constructeurs werktuigbouw en machines","lvl":"Hoger"},{"s":"Industrie","n":"Managers en teamleiders R&D productontwikkeling","lvl":"Hoger"},{"s":"Industrie","n":"Proces- en levensmiddelentechnologen, productontwikkelaars","lvl":"Hoger"},{"s":"Industrie","n":"Biochemisch en microbiologisch analisten / laboranten","lvl":"Hoger"},{"s":"Industrie","n":"Chemisch en fysisch analisten","lvl":"Hoger"},{"s":"Industrie","n":"Leidinggevenden proces- en levensmiddelenindustrie","lvl":"Hoger"},{"s":"Industrie","n":"Managers en teamleiders R&D laboratorium (chemische en levensmiddelenindustrie)","lvl":"Hoger"},{"s":"Industrie","n":"Engineers hardware en industriële automatisering, PLC-programmeurs, embedded software engineers","lvl":"Hoger"},{"s":"Industrie","n":"Projectleiders elektronica en industriële automatisering","lvl":"Hoger"},{"s":"Industrie","n":"Kwaliteitsmedewerkers, QA managers","lvl":"Hoger"},{"s":"Industrie","n":"Managers en bedrijfsleiders industrie","lvl":"Hoger"},{"s":"Transport - logistiek","n":"Magazijn-, expeditiemedewerkers en orderpickers","lvl":"Basis"},{"s":"Transport - logistiek","n":"Heftruckchauffeurs","lvl":"Basis"},{"s":"Transport - logistiek","n":"Bijrijders, laders en lossers","lvl":"Basis"},{"s":"Transport - logistiek","n":"Beladers vuilniswagen, vuilnisophalers","lvl":"Basis"},{"s":"Transport - logistiek","n":"Bestelwagenchauffeurs en -bezorgers (bijv. supermarkten)","lvl":"Basis"},{"s":"Transport - logistiek","n":"Fiets- en brommerkoeriers, postbezorgers","lvl":"Basis"},{"s":"Transport - logistiek","n":"Verhuizers","lvl":"Basis"},{"s":"Transport - logistiek","n":"Rangeerders","lvl":"Basis"},{"s":"Transport - logistiek","n":"Taxichauffeurs groepsvervoer","lvl":"Basis"},{"s":"Transport - logistiek","n":"Vrachtwagenchauffeurs","lvl":"Middelbaar"},{"s":"Transport - logistiek","n":"Buschauffeurs lijndienst","lvl":"Middelbaar"},{"s":"Transport - logistiek","n":"Buschauffeurs touringcar","lvl":"Middelbaar"},{"s":"Transport - logistiek","n":"Conducteurs","lvl":"Middelbaar"},{"s":"Transport - logistiek","n":"Treinmachinisten","lvl":"Middelbaar"},{"s":"Transport - logistiek","n":"Matrozen binnenvaart","lvl":"Middelbaar"},{"s":"Transport - logistiek","n":"Schippers binnenvaart","lvl":"Middelbaar"},{"s":"Transport - logistiek","n":"Matrozen zeevaart","lvl":"Middelbaar"},{"s":"Transport - logistiek","n":"Maritiem officieren","lvl":"Middelbaar"},{"s":"Transport - logistiek","n":"Logistiek (administratief) medewerkers","lvl":"Middelbaar"},{"s":"Transport - logistiek","n":"Leidinggevenden magazijn, magazijnchefs","lvl":"Middelbaar"},{"s":"Transport - logistiek","n":"Declaranten, expediteurs en exportmedewerkers binnendienst","lvl":"Middelbaar"},{"s":"Transport - logistiek","n":"Transportplanners","lvl":"Middelbaar"},{"s":"Transport - logistiek","n":"(Trein)verkeersleiders","lvl":"Hoger"},{"s":"Transport - logistiek","n":"Logistiek managers","lvl":"Hoger"},{"s":"Veiligheid","n":"Verkeersregelaars","lvl":"Basis"},{"s":"Veiligheid","n":"Brandwachten / heetwerkwachten","lvl":"Basis"},{"s":"Veiligheid","n":"Handhavers openbare ruimte (BOA's en toezichthouders)","lvl":"Middelbaar"},{"s":"Veiligheid","n":"(Complex)beveiligers penitentiaire inrichting","lvl":"Middelbaar"},{"s":"Veiligheid","n":"Objectbeveiligers","lvl":"Middelbaar"},{"s":"Veiligheid","n":"Meldkamermedewerkers","lvl":"Middelbaar"},{"s":"Veiligheid","n":"Adviseurs brandveiligheid","lvl":"Middelbaar"},{"s":"Veiligheid","n":"Veiligheidskundigen","lvl":"Hoger"},{"s":"Detailhandel","n":"Verkoopmedewerkers tankstation","lvl":"Basis"},{"s":"Detailhandel","n":"Kassamedewerkers","lvl":"Basis"},{"s":"Detailhandel","n":"Verkoopmedewerkers food (voedingsspeciaalzaken)","lvl":"Middelbaar"},{"s":"Detailhandel","n":"Brood- en banketbakkers","lvl":"Middelbaar"},{"s":"Detailhandel","n":"Slagers","lvl":"Middelbaar"},{"s":"Detailhandel","n":"Kappers","lvl":"Middelbaar"},{"s":"Detailhandel","n":"Verkoopmedewerkers mode (kleding en schoenen)","lvl":"Middelbaar"},{"s":"Detailhandel","n":"Schoenmakers","lvl":"Middelbaar"},{"s":"Detailhandel","n":"Verkoopmedewerkers juwelier","lvl":"Middelbaar"},{"s":"Detailhandel","n":"Verkoopmedewerkers optiek","lvl":"Middelbaar"},{"s":"Detailhandel","n":"Opticiens","lvl":"Middelbaar"},{"s":"Detailhandel","n":"Audiciens","lvl":"Middelbaar"},{"s":"Detailhandel","n":"Verkoopmedewerkers drogisterij","lvl":"Middelbaar"},{"s":"Detailhandel","n":"Verkoopmedewerkers zorgartikelen en -zelfhulpmiddelen","lvl":"Middelbaar"},{"s":"Detailhandel","n":"Verkoopmedewerkers tuincentrum","lvl":"Middelbaar"},{"s":"Detailhandel","n":"Autoverkopers","lvl":"Middelbaar"},{"s":"Detailhandel","n":"Verkoopmedewerkers elektronica","lvl":"Middelbaar"},{"s":"Detailhandel","n":"Monteurs consumentenelektronica","lvl":"Middelbaar"},{"s":"Detailhandel","n":"Monteurs witgoed","lvl":"Middelbaar"},{"s":"Detailhandel","n":"Verkoopmedewerkers bouwmarkten en doe-het-zelf","lvl":"Middelbaar"},{"s":"Detailhandel","n":"Verkoopmedewerkers woninginrichting (keukens / badkamers)","lvl":"Middelbaar"},{"s":"Detailhandel","n":"Woninginrichters, vloerenleggers en keukenmonteurs","lvl":"Middelbaar"},{"s":"Detailhandel","n":"Visual merchandisers","lvl":"Middelbaar"},{"s":"Detailhandel","n":"(Afdelings)managers / bedrijfsleiders supermarkt","lvl":"Hoger"},{"s":"Horeca","n":"Afwassers","lvl":"Basis"},{"s":"Horeca","n":"Keukenassistenten","lvl":"Basis"},{"s":"Horeca","n":"Medewerkers fastservice (in o.a. snackbars, ijssalons, lunchrooms)","lvl":"Middelbaar"},{"s":"Horeca","n":"Cateringmedewerkers","lvl":"Middelbaar"},{"s":"Horeca","n":"Medewerkers banqueting","lvl":"Middelbaar"},{"s":"Horeca","n":"Medewerkers bediening horeca","lvl":"Middelbaar"},{"s":"Horeca","n":"Barpersoneel","lvl":"Middelbaar"},{"s":"Horeca","n":"Restaurantkoks","lvl":"Middelbaar"},{"s":"Horeca","n":"Hotelreceptionisten","lvl":"Middelbaar"},{"s":"Horeca","n":"Managers horeca","lvl":"Middelbaar"},{"s":"Landbouw, natuur en milieu","n":"Loonwerkers, landbouwmachinisten en tractorchauffeurs","lvl":"Middelbaar"},{"s":"Landbouw, natuur en milieu","n":"(Voorman) hoveniers / groenonderhoud, boomverzorgers, greenkeepers","lvl":"Middelbaar"},{"s":"Landbouw, natuur en milieu","n":"(Vakbekwaam) medewerkers boomkwekerij","lvl":"Middelbaar"},{"s":"Landbouw, natuur en milieu","n":"(Vakbekwaam / zelfstandig) medewerkers teelt","lvl":"Middelbaar"},{"s":"Landbouw, natuur en milieu","n":"Meewerkend voormannen / teamleiders / (assistent) bedrijfsleiders teelt","lvl":"Middelbaar"},{"s":"Landbouw, natuur en milieu","n":"Medewerkers zaadteelt en plantenveredeling","lvl":"Middelbaar"},{"s":"Landbouw, natuur en milieu","n":"Medewerkers dier- en veehouderij","lvl":"Middelbaar"},{"s":"Landbouw, natuur en milieu","n":"(Assistent) bedrijfsleiders dier- en veehouderij","lvl":"Middelbaar"},{"s":"Landbouw, natuur en milieu","n":"Medewerkers bos- en natuurbeheer, ecologen, landschapsbeheerders / rentmeesters","lvl":"Middelbaar"},{"s":"Schoonmaak - reiniging","n":"Schoonmakers (o.a. kantoren, bedrijven, hotels, vakantieparken)","lvl":"Basis"},{"s":"Schoonmaak - reiniging","n":"Gespecialiseerde schoonmakers (industrieel, calamiteiten, cleanrooms)","lvl":"Basis"},{"s":"Schoonmaak - reiniging","n":"Glazenwassers","lvl":"Basis"},{"s":"Schoonmaak - reiniging","n":"Medewerkers autowasstraat","lvl":"Basis"},{"s":"Schoonmaak - reiniging","n":"Ongediertebestrijders","lvl":"Basis"},{"s":"Schoonmaak - reiniging","n":"Teamleiders en voormannen schoonmaak","lvl":"Middelbaar"},{"s":"Commercieel – HR - strategie","n":"Medewerkers klantcontact / klantenservice","lvl":"Middelbaar"},{"s":"Commercieel – HR - strategie","n":"Supervisors klantcontact / klantenservice","lvl":"Middelbaar"},{"s":"Commercieel – HR - strategie","n":"Commercieel medewerkers binnendienst","lvl":"Middelbaar"},{"s":"Commercieel – HR - strategie","n":"Reisadviseurs","lvl":"Middelbaar"},{"s":"Commercieel – HR - strategie","n":"Taxateurs onroerend goed","lvl":"Hoger"},{"s":"Commercieel – HR - strategie","n":"Vastgoedmanagers en -beheerders","lvl":"Hoger"},{"s":"Commercieel – HR - strategie","n":"Business consultants, (technisch) organisatieadviseurs en kwaliteitsmanagers","lvl":"Hoger"},{"s":"Commercieel – HR - strategie","n":"Online marketeers","lvl":"Hoger"},{"s":"Commercieel – HR - strategie","n":"Communicatie- en pr-adviseurs","lvl":"Hoger"},{"s":"Commercieel – HR - strategie","n":"HR-adviseurs","lvl":"Hoger"},{"s":"Commercieel – HR - strategie","n":"Recruiters","lvl":"Hoger"},{"s":"Financieel en administratie – juridisch","n":"Incassomedewerkers","lvl":"Middelbaar"},{"s":"Financieel en administratie – juridisch","n":"Juridisch secretaressen","lvl":"Middelbaar"},{"s":"Financieel en administratie – juridisch","n":"Directiesecretaresses en managementassistenten","lvl":"Middelbaar"},{"s":"Financieel en administratie – juridisch","n":"Personeelsplanners en roostermakers","lvl":"Middelbaar"},{"s":"Financieel en administratie – juridisch","n":"Boekhouders en financieel administrateurs","lvl":"Hoger"},{"s":"Financieel en administratie – juridisch","n":"Salarisadministrateurs","lvl":"Hoger"},{"s":"Financieel en administratie – juridisch","n":"Schadebehandelaars","lvl":"Hoger"},{"s":"Financieel en administratie – juridisch","n":"Assurantieadviseurs, acceptanten verzekeringsmaatschappij","lvl":"Hoger"},{"s":"Financieel en administratie – juridisch","n":"Adviseurs hypotheken, kredieten en subsidies","lvl":"Hoger"},{"s":"Financieel en administratie – juridisch","n":"Financieel- en beleggingsspecialisten, treasurers","lvl":"Hoger"},{"s":"Financieel en administratie – juridisch","n":"(Assistent) controllers, auditors en compliance officers","lvl":"Hoger"},{"s":"Financieel en administratie – juridisch","n":"AA- en assistent accountants","lvl":"Hoger"},{"s":"Financieel en administratie – juridisch","n":"(Register)accountants","lvl":"Hoger"},{"s":"Financieel en administratie – juridisch","n":"Belastingadviseurs","lvl":"Hoger"},{"s":"Financieel en administratie – juridisch","n":"Managers inkoop","lvl":"Hoger"},{"s":"Financieel en administratie – juridisch","n":"(Assistent) inkopers en contractmanagers","lvl":"Hoger"},{"s":"Financieel en administratie – juridisch","n":"Bewindvoerders","lvl":"Hoger"},{"s":"Financieel en administratie – juridisch","n":"Juridisch medewerkers","lvl":"Hoger"},{"s":"Financieel en administratie – juridisch","n":"Juristen en juridisch specialisten","lvl":"Hoger"},{"s":"Financieel en administratie – juridisch","n":"Advocaten","lvl":"Hoger"},{"s":"ICT","n":"ICT-servicedeskmedewerkers","lvl":"Middelbaar"},{"s":"ICT","n":"Applicatie- en functioneel beheerders","lvl":"Middelbaar"},{"s":"ICT","n":"Systeembeheerders","lvl":"Middelbaar"},{"s":"ICT","n":"Databasebeheerders","lvl":"Middelbaar"},{"s":"ICT","n":"Netwerkbeheerders","lvl":"Middelbaar"},{"s":"ICT","n":"Database- en datawarehouse ontwikkelaars","lvl":"Hoger"},{"s":"ICT","n":"Softwareontwikkelaars","lvl":"Hoger"},{"s":"ICT","n":"Programmeurs en developers ICT","lvl":"Hoger"},{"s":"ICT","n":"Webdevelopers (technisch / backend)","lvl":"Hoger"},{"s":"ICT","n":"GEO / GIS specialisten (geografisch informatiesysteem)","lvl":"Hoger"},{"s":"ICT","n":"Software testers, testmanagers ICT","lvl":"Hoger"},{"s":"ICT","n":"Securityspecialisten ICT","lvl":"Hoger"},{"s":"ICT","n":"Netwerkspecialisten / netwerkengineers","lvl":"Hoger"},{"s":"ICT","n":"Ontwerpers / architecten ICT-systemen","lvl":"Hoger"},{"s":"ICT","n":"BI (business intelligence) specialisten","lvl":"Hoger"},{"s":"ICT","n":"Data analisten, data scientists en actuarissen","lvl":"Hoger"},{"s":"ICT","n":"Adviseurs, consultants en informatiespecialisten ICT","lvl":"Hoger"},{"s":"Overheid","n":"Medewerkers burgerzaken","lvl":"Middelbaar"},{"s":"Overheid","n":"Penitentiair inrichtingswerkers","lvl":"Middelbaar"},{"s":"Overheid","n":"Politieagenten","lvl":"Middelbaar"},{"s":"Overheid","n":"Beroepsmilitairen","lvl":"Middelbaar"},{"s":"Overheid","n":"Vergunningverleners ruimtelijke ordening","lvl":"Hoger"},{"s":"Overheid","n":"Maatschappelijk werkers / sociaal werkers","lvl":"Hoger"},{"s":"Overheid","n":"Reclasseringswerkers","lvl":"Hoger"},{"s":"Overheid","n":"Beleidsadviseurs sociaal domein","lvl":"Hoger"},{"s":"Overheid","n":"Beleidsadviseurs onderwijs en jeugd","lvl":"Hoger"},{"s":"Overheid","n":"Beleidsadviseurs bestuurlijk-juridisch","lvl":"Hoger"},{"s":"Overheid","n":"Beleidsadviseurs economie, planeconomen","lvl":"Hoger"},{"s":"Overheid","n":"Beleidsadviseurs (inclusief managers) ruimtelijke ordening / planologie, milieu","lvl":"Hoger"},{"s":"Overheid","n":"Verkeersplanologen","lvl":"Hoger"},{"s":"Overheid","n":"Planologen en stedenbouwkundigen","lvl":"Hoger"},{"s":"Overheid","n":"Landschapsarchitecten","lvl":"Hoger"},{"s":"Overheid","n":"Milieu-inspecteurs","lvl":"Hoger"},{"s":"Overheid","n":"Hydrologen en milieutechnologen / adviseurs waterbeheer","lvl":"Hoger"},{"s":"Onderwijs - pedagogisch","n":"Zweminstructeurs","lvl":"Middelbaar"},{"s":"Onderwijs - pedagogisch","n":"Fitnessinstructeurs","lvl":"Middelbaar"},{"s":"Onderwijs - pedagogisch","n":"(Pedagogisch) medewerkers kinderopvang","lvl":"Middelbaar"},{"s":"Onderwijs - pedagogisch","n":"Technisch onderwijsassistenten (TOA)","lvl":"Middelbaar"},{"s":"Onderwijs - pedagogisch","n":"Leerkrachten basisonderwijs","lvl":"Hoger"},{"s":"Onderwijs - pedagogisch","n":"Leerkrachten speciaal onderwijs en RT","lvl":"Hoger"},{"s":"Onderwijs - pedagogisch","n":"Docenten lichamelijke opvoeding","lvl":"Hoger"},{"s":"Onderwijs - pedagogisch","n":"Docenten vo / mbo taalkundige vakken","lvl":"Hoger"},{"s":"Onderwijs - pedagogisch","n":"Docenten vo / mbo exacte vakken","lvl":"Hoger"},{"s":"Onderwijs - pedagogisch","n":"Docenten vo / mbo economische vakken","lvl":"Hoger"},{"s":"Onderwijs - pedagogisch","n":"Docenten vo maatschappelijke vakken","lvl":"Hoger"},{"s":"Onderwijs - pedagogisch","n":"Docenten vo cultuur en kunstvakken","lvl":"Hoger"},{"s":"Onderwijs - pedagogisch","n":"Vakdocenten beroepsonderwijs techniek","lvl":"Hoger"},{"s":"Onderwijs - pedagogisch","n":"Vakdocenten beroepsonderwijs verpleegkunde / verzorging","lvl":"Hoger"},{"s":"Onderwijs - pedagogisch","n":"NT2 docenten (mits in bezit van 2e graads onderwijsbevoegdheid)","lvl":"Hoger"},{"s":"Onderwijs - pedagogisch","n":"Managers kinderdagverblijven","lvl":"Hoger"},{"s":"Onderwijs - pedagogisch","n":"Directeuren / schoolleiders basis- en speciaal onderwijs","lvl":"Hoger"},{"s":"Onderwijs - pedagogisch","n":"Directeuren en managers voortgezet onderwijs en mbo","lvl":"Hoger"},{"s":"Onderwijs - pedagogisch","n":"Docenten hbo / wo wis- en natuurkunde, techniek en ICT","lvl":"Hoger"},{"s":"Onderwijs - pedagogisch","n":"Docenten hbo / wo economie en recht","lvl":"Hoger"},{"s":"Zorg","n":"Huishoudelijk medewerkers (particulieren en thuiszorg)","lvl":"Basis"},{"s":"Zorg","n":"Helpenden","lvl":"Middelbaar"},{"s":"Zorg","n":"(Assistent-)woonbegeleiders","lvl":"Middelbaar"},{"s":"Zorg","n":"Verzorgenden (individuele gezondheidszorg (ig), instelling, kraamzorg)","lvl":"Middelbaar"},{"s":"Zorg","n":"Algemeen verpleegkundigen","lvl":"Middelbaar"},{"s":"Zorg","n":"Medewerkers steriele medische hulpmiddelen","lvl":"Middelbaar"},{"s":"Zorg","n":"Orthopedisch (prothese) technici","lvl":"Middelbaar"},{"s":"Zorg","n":"Apothekersassistenten","lvl":"Middelbaar"},{"s":"Zorg","n":"Tandartsassistenten","lvl":"Middelbaar"},{"s":"Zorg","n":"Doktersassistenten","lvl":"Middelbaar"},{"s":"Zorg","n":"Medisch secretaressen","lvl":"Middelbaar"},{"s":"Zorg","n":"Medisch pedicures","lvl":"Middelbaar"},{"s":"Zorg","n":"Podotherapeuten","lvl":"Hoger"},{"s":"Zorg","n":"Wijkverpleegkundigen","lvl":"Hoger"},{"s":"Zorg","n":"Gespecialiseerd verpleegkundigen (o.a. intensive care, kinder, oncologie, spoedeisende hulp, ambulance, geriatrie, gehandicaptenzorg, psychiatrie, GGZ)","lvl":"Hoger"},{"s":"Zorg","n":"(Verpleegkundig) teamleiders zorg en zorgcoördinatoren","lvl":"Hoger"},{"s":"Zorg","n":"Coördinatoren groeps- en woonbegeleiders","lvl":"Hoger"},{"s":"Zorg","n":"Praktijkondersteuners huisarts","lvl":"Hoger"},{"s":"Zorg","n":"Verpleegkundig specialisten","lvl":"Hoger"},{"s":"Zorg","n":"Physician assistants","lvl":"Hoger"},{"s":"Zorg","n":"Mondhygiënisten","lvl":"Hoger"},{"s":"Zorg","n":"Ergotherapeuten","lvl":"Hoger"},{"s":"Zorg","n":"Fysiotherapeuten","lvl":"Hoger"},{"s":"Zorg","n":"Logopedisten","lvl":"Hoger"},{"s":"Zorg","n":"Diëtisten","lvl":"Hoger"},{"s":"Zorg","n":"Anesthesiemedewerkers en operatieassistenten","lvl":"Hoger"},{"s":"Zorg","n":"Hersen-, hart- en longfunctie laboranten en technici","lvl":"Hoger"},{"s":"Zorg","n":"Tandtechnici","lvl":"Hoger"},{"s":"Zorg","n":"Radiodiagnostisch laboranten","lvl":"Hoger"},{"s":"Zorg","n":"Medisch en pathologisch analisten","lvl":"Hoger"},{"s":"Zorg","n":"Arbeidshygiënisten","lvl":"Hoger"},{"s":"Zorg","n":"Orthopedagogen","lvl":"Hoger"},{"s":"Zorg","n":"Tandartsen","lvl":"Hoger"},{"s":"Zorg","n":"Huisartsen","lvl":"Hoger"},{"s":"Zorg","n":"Apothekers","lvl":"Hoger"},{"s":"Zorg","n":"Dierenartsen","lvl":"Hoger"},{"s":"Zorg","n":"Gz-psychologen, klinisch psychologen","lvl":"Hoger"},{"s":"Zorg","n":"Sociotherapeuten","lvl":"Hoger"},{"s":"Zorg","n":"Psychiaters","lvl":"Hoger"},{"s":"Zorg","n":"Specifieke geneeskundige specialisten (o.a. spoedeisende hulp, ouderengeneeskunde, verstandelijk gehandicapten)","lvl":"Hoger"},{"s":"Zorg","n":"Bedrijfsartsen, verzekeringsartsen","lvl":"Hoger"},{"s":"Zorg","n":"Sociaal geneeskundigen maatschappij en gezondheid (o.a. jeugdgezondheidszorg, infectieziekten, forensisch, vertrouwensartsen)","lvl":"Hoger"}].map(b => ({...b, info:"Uit UWV-lijst kansrijke beroepen 2025-2026", url:""}));
 
-    // ===== INGEBOUWDE DATA (306 beroepen, UWV 2025-2026) =====
-    const BUILTIN = [{"s":"Bouw","n":"(Hoofd)uitvoerders bouw en installatietechniek","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Bouw","n":"(Hoofd)uitvoerders grond-, weg- en waterbouw","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Bouw","n":"Betonwerkers","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Bouw","n":"Bouwkundig inspecteurs, opzichters en adviseurs (EPA- en BENG adviseurs)","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Bouw","n":"Dakdekkers","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Bouw","n":"Glaszetters","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Bouw","n":"Grondverzetmachinisten","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Bouw","n":"Heimachinisten","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Bouw","n":"Isoleerders","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Bouw","n":"Kraanmachinisten","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Bouw","n":"Landmeters","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Bouw","n":"Onderhoudsmedewerkers gebouwen","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Bouw","n":"Opzichters en beheerders grond-, weg- en waterbouw","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Bouw","n":"Rioleringsmedewerkers","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Bouw","n":"Rolluik- en zonweringinstallateurs","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Bouw","n":"Schilders","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Bouw","n":"Slopers bouw en asbestverwijderaars","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Bouw","n":"Sondeerders en boormeesters grondboring","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Bouw","n":"Steigerbouwers","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Bouw","n":"Stratenmakers","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Bouw","n":"Tegelzetters","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Bouw","n":"Tekenaars bouwkunde en BIM modelleurs","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Bouw","n":"Tekenaars grond-, weg- en waterbouw","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Bouw","n":"Timmerlieden (onderhoud en civiele bouw)","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Bouw","n":"Vaklieden grond-, weg- en waterbouw","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Bouw","n":"Werkplaatstimmermannen, interieurbouwers, standbouwers, wand- en plafondmonteurs","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Bouw","n":"Werkvoorbereiders en calculatoren bouw en installatietechniek","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Bouw","n":"Werkvoorbereiders en calculatoren grond-, weg- en waterbouw","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Bouw","n":"Adviseurs en ontwerper-constructeurs bouwkunde","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Bouw","n":"Adviseurs en ontwerper-constructeurs grond-, weg- en waterbouw","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Bouw","n":"Bodemkundig onderzoekers en –saneerders","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Bouw","n":"Managers en projectleiders bouw en installatie","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Bouw","n":"Projectleiders grond-, weg- en waterbouw","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Commercieel – HR - strategie","n":"Commercieel medewerkers binnendienst","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Commercieel – HR - strategie","n":"Medewerkers klantcontact / klantenservice","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Commercieel – HR - strategie","n":"Reisadviseurs","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Commercieel – HR - strategie","n":"Supervisors klantcontact / klantenservice","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Commercieel – HR - strategie","n":"Business consultants, (technisch) organisatieadviseurs en kwaliteitsmanagers","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Commercieel – HR - strategie","n":"Communicatie- en pr-adviseurs","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Commercieel – HR - strategie","n":"HR-adviseurs","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Commercieel – HR - strategie","n":"Online marketeers","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Commercieel – HR - strategie","n":"Recruiters","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Commercieel – HR - strategie","n":"Taxateurs onroerend goed","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Commercieel – HR - strategie","n":"Vastgoedmanagers en –beheerders","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Detailhandel","n":"Kassamedewerkers","lvl":"Basis","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Detailhandel","n":"Verkoopmedewerkers tankstation","lvl":"Basis","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Detailhandel","n":"Audiciens","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Detailhandel","n":"Autoverkopers","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Detailhandel","n":"Brood- en banketbakkers","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Detailhandel","n":"Kappers","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Detailhandel","n":"Monteurs consumentenelektronica","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Detailhandel","n":"Monteurs witgoed","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Detailhandel","n":"Opticiens","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Detailhandel","n":"Schoenmakers","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Detailhandel","n":"Slagers","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Detailhandel","n":"Verkoopmedewerkers bouwmarkten en doe-het-zelf","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Detailhandel","n":"Verkoopmedewerkers drogisterij","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Detailhandel","n":"Verkoopmedewerkers elektronica","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Detailhandel","n":"Verkoopmedewerkers food (voedingsspeciaalzaken)","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Detailhandel","n":"Verkoopmedewerkers juwelier","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Detailhandel","n":"Verkoopmedewerkers mode (kleding en schoenen)","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Detailhandel","n":"Verkoopmedewerkers optiek","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Detailhandel","n":"Verkoopmedewerkers tuincentrum","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Detailhandel","n":"Verkoopmedewerkers woninginrichting (keukens / badkamers)","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Detailhandel","n":"Verkoopmedewerkers zorgartikelen en -zelfhulpmiddelen","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Detailhandel","n":"Visual merchandisers","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Detailhandel","n":"Woninginrichters, vloerenleggers en keukenmonteurs","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Detailhandel","n":"(Afdelings)managers / bedrijfsleiders supermarkt","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Financieel en administratie – juridisch","n":"Directiesecretaresses en managementassistenten","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Financieel en administratie – juridisch","n":"Incassomedewerkers","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Financieel en administratie – juridisch","n":"Juridisch secretaressen","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Financieel en administratie – juridisch","n":"Personeelsplanners en roostermakers","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Financieel en administratie – juridisch","n":"(Assistent) controllers, auditors en compliance officers","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Financieel en administratie – juridisch","n":"(Assistent) inkopers en contractmanagers","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Financieel en administratie – juridisch","n":"(Register)accountants","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Financieel en administratie – juridisch","n":"AA- en assistent accountants","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Financieel en administratie – juridisch","n":"Adviseurs hypotheken, kredieten en subsidies","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Financieel en administratie – juridisch","n":"Advocaten","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Financieel en administratie – juridisch","n":"Assurantieadviseurs, acceptanten verzekeringsmaatschappij","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Financieel en administratie – juridisch","n":"Belastingadviseurs","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Financieel en administratie – juridisch","n":"Bewindvoerders","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Financieel en administratie – juridisch","n":"Boekhouders en financieel administrateurs","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Financieel en administratie – juridisch","n":"Financieel- en beleggingsspecialisten, treasurers","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Financieel en administratie – juridisch","n":"Juridisch medewerkers","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Financieel en administratie – juridisch","n":"Juristen en juridisch specialisten","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Financieel en administratie – juridisch","n":"Managers inkoop","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Financieel en administratie – juridisch","n":"Salarisadministrateurs","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Financieel en administratie – juridisch","n":"Schadebehandelaars","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Horeca","n":"Afwassers","lvl":"Basis","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Horeca","n":"Keukenassistenten","lvl":"Basis","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Horeca","n":"Barpersoneel","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Horeca","n":"Cateringmedewerkers","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Horeca","n":"Hotelreceptionisten","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Horeca","n":"Managers horeca","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Horeca","n":"Medewerkers banqueting","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Horeca","n":"Medewerkers bediening horeca","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Horeca","n":"Medewerkers fastservice (in o.a. snackbars, ijssalons, lunchrooms)","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Horeca","n":"Restaurantkoks","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"ICT","n":"Applicatie- en functioneel beheerders","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"ICT","n":"Databasebeheerders","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"ICT","n":"ICT-servicedeskmedewerkers","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"ICT","n":"Netwerkbeheerders","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"ICT","n":"Systeembeheerders","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"ICT","n":"Adviseurs, consultants en informatiespecialisten ICT","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"ICT","n":"BI (business intelligence) specialisten","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"ICT","n":"Data analisten, data scientists en actuarissen","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"ICT","n":"Database- en datawarehouse ontwikkelaars","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"ICT","n":"GEO / GIS specialisten (geografisch informatiesysteem)","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"ICT","n":"Netwerkspecialisten / netwerkengineers","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"ICT","n":"Ontwerpers / architecten ICT-systemen","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"ICT","n":"Programmeurs en developers ICT","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"ICT","n":"Securityspecialisten ICT","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"ICT","n":"Software testers, testmanagers ICT","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"ICT","n":"Softwareontwikkelaars","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"ICT","n":"Webdevelopers (technisch / backend)","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Industrie","n":"Assemblagemedewerkers","lvl":"Basis","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Industrie","n":"Verf- en lakspuiters","lvl":"Basis","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Industrie","n":"(Hoofd)operators proces- en levensmiddelenindustrie","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Industrie","n":"Assemblagemonteurs","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Industrie","n":"CNC-machinebedieners","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Industrie","n":"CNC-verspaners (inclusief programmeren)","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Industrie","n":"Calculatoren procestechniek","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Industrie","n":"Constructiebankwerkers","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Industrie","n":"Constructiemedewerkers en carrosseriebouwers","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Industrie","n":"Conventioneel verspaners en machinebankwerkers","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Industrie","n":"Fijninstrumentmakers en fijnmechanici","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Industrie","n":"Gereedschapsmakers","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Industrie","n":"Gespecialiseerd lassers, operators lasrobot","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Industrie","n":"Lassers","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Industrie","n":"Leidinggevenden assemblage en montage metaal- en overige industrie","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Industrie","n":"Machinaal meubelmakers en houtbewerkers","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Industrie","n":"Monteurs industriële machines en installaties / mechatronica (installatie, service, storing)","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Industrie","n":"Order- en productiebegeleiders industrie (binnendienst)","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Industrie","n":"Pijpfitters","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Industrie","n":"Plaatwerkers","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Industrie","n":"Productieplanners","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Industrie","n":"Technisch managers en hoofden technische dienst","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Industrie","n":"Tekenaars werktuigbouw / machines","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Industrie","n":"Vertegenwoordigers en accountmanagers technische producten","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Industrie","n":"Werkvoorbereiders en calculatoren werktuigbouw / machines","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Industrie","n":"Adviseurs, (maintenance)engineers en ontwerper-constructeurs werktuigbouw en machines","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Industrie","n":"Biochemisch en microbiologisch analisten / laboranten","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Industrie","n":"Chemisch en fysisch analisten","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Industrie","n":"Engineers hardware en industriële automatisering, PLC-programmeurs, embedded software engineers","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Industrie","n":"Kwaliteitsmedewerkers, QA managers","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Industrie","n":"Leidinggevenden proces- en levensmiddelenindustrie","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Industrie","n":"Managers en bedrijfsleiders industrie","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Industrie","n":"Managers en teamleiders R&D laboratorium (chemische en levensmiddelenindustrie)","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Industrie","n":"Managers en teamleiders R&D productontwikkeling","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Industrie","n":"Proces- en levensmiddelentechnologen, productontwikkelaars","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Industrie","n":"Projectleiders elektronica en industriële automatisering","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Installatie","n":"Elektriciens, installateurs en monteurs elektrische installaties (incl. zonnepanelen en laadpalen)","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Installatie","n":"Installateurs en monteurs luchtbehandeling, koeltechniek","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Installatie","n":"Kabelwerkers en monteurs datacommunicatie","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Installatie","n":"Loodgieters, installateurs en monteurs gas, water, sanitair, verwarming","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Installatie","n":"Medewerkers technische dienst (elektrotechnisch)","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Installatie","n":"Monteurs beveiligingsinstallaties","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Installatie","n":"Monteurs en leidingleggers gas, water","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Installatie","n":"Monteurs glasvezel en telecommunicatiesystemen","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Installatie","n":"Monteurs laag-, midden- en hoogspanning","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Installatie","n":"Monteurs lifttechniek en elektromotoren","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Installatie","n":"Monteurs meet- en regeltechniek en medische elektronica","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Installatie","n":"Tekenaars elektrotechniek","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Installatie","n":"Tekenaars installatietechniek","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Installatie","n":"Werkvoorbereiders en calculatoren elektrotechniek","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Installatie","n":"Adviseurs, engineers en projectleiders installatietechniek","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Installatie","n":"Engineers elektronica en meet- en regeltechniek","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Installatie","n":"Engineers, constructeurs en onderzoekers elektrotechnische installaties","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Installatie","n":"Inspecteurs elektrische installaties","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Installatie","n":"Projectleiders elektrotechniek","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Installatie","n":"Telecom engineers","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Landbouw, natuur en milieu","n":"(Assistent) bedrijfsleiders dier- en veehouderij","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Landbouw, natuur en milieu","n":"(Vakbekwaam / zelfstandig) medewerkers teelt","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Landbouw, natuur en milieu","n":"(Vakbekwaam) medewerkers boomkwekerij","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Landbouw, natuur en milieu","n":"(Voorman) hoveniers / groenonderhoud, boomverzorgers, greenkeepers","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Landbouw, natuur en milieu","n":"Loonwerkers, landbouwmachinisten en tractorchauffeurs","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Landbouw, natuur en milieu","n":"Medewerkers bos- en natuurbeheer, ecologen, landschapsbeheerders / rentmeesters","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Landbouw, natuur en milieu","n":"Medewerkers dier- en veehouderij","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Landbouw, natuur en milieu","n":"Medewerkers zaadteelt en plantenveredeling","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Landbouw, natuur en milieu","n":"Meewerkend voormannen / teamleiders / (assistent) bedrijfsleiders teelt","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Onderwijs - pedagogisch","n":"(Pedagogisch) medewerkers kinderopvang","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Onderwijs - pedagogisch","n":"Fitnessinstructeurs","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Onderwijs - pedagogisch","n":"Technisch onderwijsassistenten (TOA)","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Onderwijs - pedagogisch","n":"Zweminstructeurs","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Onderwijs - pedagogisch","n":"Directeuren / schoolleiders basis- en speciaal onderwijs","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Onderwijs - pedagogisch","n":"Directeuren en managers voortgezet onderwijs en mbo","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Onderwijs - pedagogisch","n":"Docenten hbo / wo economie en recht","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Onderwijs - pedagogisch","n":"Docenten hbo / wo wis- en natuurkunde, techniek en ICT","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Onderwijs - pedagogisch","n":"Docenten lichamelijke opvoeding","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Onderwijs - pedagogisch","n":"Docenten vo / mbo economische vakken","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Onderwijs - pedagogisch","n":"Docenten vo / mbo exacte vakken","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Onderwijs - pedagogisch","n":"Docenten vo / mbo taalkundige vakken","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Onderwijs - pedagogisch","n":"Docenten vo cultuur en kunstvakken","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Onderwijs - pedagogisch","n":"Docenten vo maatschappelijke vakken","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Onderwijs - pedagogisch","n":"Leerkrachten basisonderwijs","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Onderwijs - pedagogisch","n":"Leerkrachten speciaal onderwijs en RT","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Onderwijs - pedagogisch","n":"Managers kinderdagverblijven","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Onderwijs - pedagogisch","n":"NT2 docenten (mits in bezit van 2e graads onderwijsbevoegdheid)","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Onderwijs - pedagogisch","n":"Vakdocenten beroepsonderwijs techniek","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Onderwijs - pedagogisch","n":"Vakdocenten beroepsonderwijs verpleegkunde / verzorging","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Overheid","n":"Beroepsmilitairen","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Overheid","n":"Medewerkers burgerzaken","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Overheid","n":"Penitentiair inrichtingswerkers","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Overheid","n":"Politieagenten","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Overheid","n":"Beleidsadviseurs (inclusief managers) ruimtelijke ordening / planologie, milieu","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Overheid","n":"Beleidsadviseurs bestuurlijk-juridisch","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Overheid","n":"Beleidsadviseurs economie, planeconomen","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Overheid","n":"Beleidsadviseurs onderwijs en jeugd","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Overheid","n":"Beleidsadviseurs sociaal domein","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Overheid","n":"Hydrologen en milieutechnologen / adviseurs waterbeheer","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Overheid","n":"Landschapsarchitecten","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Overheid","n":"Maatschappelijk werkers / sociaal werkers","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Overheid","n":"Milieu-inspecteurs","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Overheid","n":"Planologen en stedenbouwkundigen","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Overheid","n":"Reclasseringswerkers","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Overheid","n":"Vergunningverleners ruimtelijke ordening","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Overheid","n":"Verkeersplanologen","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Schoonmaak - reiniging","n":"Gespecialiseerde schoonmakers (industrieel, calamiteiten, cleanrooms)","lvl":"Basis","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Schoonmaak - reiniging","n":"Glazenwassers","lvl":"Basis","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Schoonmaak - reiniging","n":"Medewerkers autowasstraat","lvl":"Basis","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Schoonmaak - reiniging","n":"Ongediertebestrijders","lvl":"Basis","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Schoonmaak - reiniging","n":"Schoonmakers (o.a. kantoren, bedrijven, hotels, vakantieparken)","lvl":"Basis","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Schoonmaak - reiniging","n":"Teamleiders en voormannen schoonmaak","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Transport - logistiek","n":"Beladers vuilniswagen, vuilnisophalers","lvl":"Basis","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Transport - logistiek","n":"Bestelwagenchauffeurs en -bezorgers (bijv. supermarkten)","lvl":"Basis","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Transport - logistiek","n":"Bijrijders, laders en lossers","lvl":"Basis","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Transport - logistiek","n":"Fiets- en brommerkoeriers, postbezorgers","lvl":"Basis","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Transport - logistiek","n":"Heftruckchauffeurs","lvl":"Basis","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Transport - logistiek","n":"Magazijn-, expeditiemedewerkers en orderpickers","lvl":"Basis","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Transport - logistiek","n":"Rangeerders","lvl":"Basis","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Transport - logistiek","n":"Taxichauffeurs groepsvervoer","lvl":"Basis","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Transport - logistiek","n":"Verhuizers","lvl":"Basis","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Transport - logistiek","n":"Buschauffeurs lijndienst","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Transport - logistiek","n":"Buschauffeurs touringcar","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Transport - logistiek","n":"Conducteurs","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Transport - logistiek","n":"Declaranten, expediteurs en exportmedewerkers binnendienst","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Transport - logistiek","n":"Leidinggevenden magazijn, magazijnchefs","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Transport - logistiek","n":"Logistiek (administratief) medewerkers","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Transport - logistiek","n":"Maritiem officieren","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Transport - logistiek","n":"Matrozen binnenvaart","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Transport - logistiek","n":"Matrozen zeevaart","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Transport - logistiek","n":"Schippers binnenvaart","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Transport - logistiek","n":"Transportplanners","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Transport - logistiek","n":"Treinmachinisten","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Transport - logistiek","n":"Vrachtwagenchauffeurs","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Transport - logistiek","n":"(Trein)verkeersleiders","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Transport - logistiek","n":"Logistiek managers","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Veiligheid","n":"Brandwachten / heetwerkwachten","lvl":"Basis","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Veiligheid","n":"Verkeersregelaars","lvl":"Basis","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Veiligheid","n":"(Complex)beveiligers penitentiaire inrichting","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Veiligheid","n":"Adviseurs brandveiligheid","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Veiligheid","n":"Handhavers openbare ruimte (BOA's en toezichthouders)","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Veiligheid","n":"Meldkamermedewerkers","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Veiligheid","n":"Objectbeveiligers","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Veiligheid","n":"Veiligheidskundigen","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Voertuigentechniek","n":"Automonteurs (personen- en bedrijfswagens)","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Voertuigentechniek","n":"Autoschadeherstellers (incl. caravan-/campermonteur)","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Voertuigentechniek","n":"Autospuiters","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Voertuigentechniek","n":"Bedrijfsleiders / ondernemers autogaragebedrijf","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Voertuigentechniek","n":"Elektromonteurs schepen en treinen","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Voertuigentechniek","n":"Monteurs mobiele werktuigen (incl. landbouwmachines)","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Voertuigentechniek","n":"Rijwielmonteurs","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Voertuigentechniek","n":"Scheepswerktuigkundigen","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Voertuigentechniek","n":"Werkplaatschefs auto","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Zorg","n":"Huishoudelijk medewerkers (particulieren en thuiszorg)","lvl":"Basis","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Zorg","n":"(Assistent-)woonbegeleiders","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Zorg","n":"Algemeen verpleegkundigen","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Zorg","n":"Apothekersassistenten","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Zorg","n":"Doktersassistenten","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Zorg","n":"Helpenden","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Zorg","n":"Medewerkers steriele medische hulpmiddelen","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Zorg","n":"Medisch pedicures","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Zorg","n":"Medisch secretaressen","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Zorg","n":"Orthopedisch (prothese) technici","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Zorg","n":"Tandartsassistenten","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Zorg","n":"Verzorgenden (individuele gezondheidszorg (ig), instelling, kraamzorg)","lvl":"Middelbaar","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Zorg","n":"(Verpleegkundig) teamleiders zorg en zorgcoördinatoren","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Zorg","n":"Anesthesiemedewerkers en operatieassistenten","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Zorg","n":"Apothekers","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Zorg","n":"Arbeidshygiënisten","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Zorg","n":"Bedrijfsartsen, verzekeringsartsen","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Zorg","n":"Coördinatoren groeps- en woonbegeleiders","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Zorg","n":"Dierenartsen","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Zorg","n":"Diëtisten","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Zorg","n":"Ergotherapeuten","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Zorg","n":"Fysiotherapeuten","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Zorg","n":"Gespecialiseerd verpleegkundigen (o.a. intensive care, kinder, oncologie, spoedeisende hulp","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Zorg","n":"Gz-psychologen, klinisch psychologen","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Zorg","n":"Hersen-, hart- en longfunctie laboranten en technici","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Zorg","n":"Huisartsen","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Zorg","n":"Logopedisten","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Zorg","n":"Medisch en pathologisch analisten","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Zorg","n":"Mondhygiënisten","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Zorg","n":"Orthopedagogen","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Zorg","n":"Physician assistants","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Zorg","n":"Podotherapeuten","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Zorg","n":"Praktijkondersteuners huisarts","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Zorg","n":"Psychiaters","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Zorg","n":"Radiodiagnostisch laboranten","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Zorg","n":"Sociaal geneeskundigen maatschappij en gezondheid (o.a. jeugdgezondheidszorg, infectieziekten","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Zorg","n":"Sociotherapeuten","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Zorg","n":"Specifieke geneeskundige specialisten (o.a. spoedeisende hulp, ouderengeneeskunde, verstandelijk","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Zorg","n":"Tandartsen","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Zorg","n":"Tandtechnici","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Zorg","n":"Verpleegkundig specialisten","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""},{"s":"Zorg","n":"Wijkverpleegkundigen","lvl":"Hoger","info":"Uit UWV-lijst kansrijke beroepen","url":""}];
+  // =====================================================================
+  // STATE
+  // =====================================================================
+  const STORAGE_KEY   = 'bp2026_data_v6';
+  const STORAGE_STATE = 'bp2026_user_v6';
 
-    // ===== SECTOR-NAMEN (exacte PDF-tekst) =====
-    const PDF_SECTORS = new Set(["Bouw", "Installatie", "Voertuigentechniek", "Industrie", "Transport - logistiek", "Veiligheid", "Detailhandel", "Horeca", "Landbouw, natuur en milieu", "Schoonmaak - reiniging", "Commercieel – HR - strategie", "Financieel en administratie – juridisch", "ICT", "Overheid", "Onderwijs - pedagogisch", "Zorg"]);
+  let beroepen  = loadData() || INGEBOUWDE_DATA;
+  let userState = loadUserState();
 
-    // ===== OPSLAG =====
-    const KEY_DATA = "bp2026_data_v8";
-    const KEY_USER = "bp2026_user_v5";
-
-    let beroepen = (() => {
-      try { const r = localStorage.getItem(KEY_DATA); return r ? JSON.parse(r).beroepen : null; }
-      catch { return null; }
-    })() || BUILTIN;
-
-    let userState = (() => {
-      try { return JSON.parse(localStorage.getItem(KEY_USER) || "{}"); }
-      catch { return {}; }
-    })();
-
-    function saveData(data) {
-      localStorage.setItem(KEY_DATA, JSON.stringify({ savedAt: new Date().toISOString(), beroepen: data }));
-      beroepen = data;
-      updateBadge();
-    }
-
-    function saveUser() { localStorage.setItem(KEY_USER, JSON.stringify(userState)); }
-
-    function getEntry(b) {
-      const k = (b.s + "||" + b.n).toLowerCase();
-      if (!userState[k]) userState[k] = { like: false, doelgroep: false, note: "" };
-      return userState[k];
-    }
-
-    function updateBadge() {
-      const el = document.getElementById("dataBadge");
-      try {
-        const r = localStorage.getItem(KEY_DATA);
-        if (!r) { el.textContent = `• ${beroepen.length} beroepen (ingebouwd)`; return; }
-        const dt = new Date(JSON.parse(r).savedAt);
-        el.textContent = `• ${beroepen.length} beroepen • bijgewerkt ${dt.toLocaleString("nl-NL")}`;
-      } catch { el.textContent = `• ${beroepen.length} beroepen`; }
-    }
-
-    function esc(s) {
-      return (s || "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;");
-    }
-
-    // ===== TABS =====
-    document.getElementById("tabPortalBtn").addEventListener("click", showPortal);
-    document.getElementById("tabSettingsBtn").addEventListener("click", showSettings);
-
-    function showPortal() {
-      document.getElementById("portalView").classList.remove("hidden");
-      document.getElementById("settingsView").classList.add("hidden");
-      document.getElementById("tabPortalBtn").className = "px-3 py-2 rounded-lg font-bold bg-brand-blue text-white hover:opacity-90";
-      document.getElementById("tabSettingsBtn").className = "px-3 py-2 rounded-lg font-bold bg-white border hover:bg-slate-50";
-    }
-    function showSettings() {
-      document.getElementById("settingsView").classList.remove("hidden");
-      document.getElementById("portalView").classList.add("hidden");
-      document.getElementById("tabSettingsBtn").className = "px-3 py-2 rounded-lg font-bold bg-brand-blue text-white hover:opacity-90";
-      document.getElementById("tabPortalBtn").className = "px-3 py-2 rounded-lg font-bold bg-white border hover:bg-slate-50";
-    }
-
-    // ===== FILTERS =====
-    document.getElementById("searchInput").addEventListener("keyup", filterContent);
-    ["levelFilter","sectorFilter","selectedFilter"].forEach(id =>
-      document.getElementById(id).addEventListener("change", filterContent));
-
-    document.getElementById("resetBtn").addEventListener("click", () => {
-      ["searchInput"].forEach(id => document.getElementById(id).value = "");
-      ["levelFilter","sectorFilter","selectedFilter"].forEach(id => document.getElementById(id).value = "all");
-      filterContent();
-    });
-
-    function refreshSectors() {
-      const sf = document.getElementById("sectorFilter");
-      const sectors = [...new Set(beroepen.map(b => b.s))].sort((a, b) => a.localeCompare(b, "nl"));
-      sf.innerHTML = `<option value="all">Alle sectoren</option>` +
-        sectors.map(s => `<option value="${esc(s)}">${esc(s)}</option>`).join("");
-    }
-
-    function filterContent() {
-      const q = document.getElementById("searchInput").value.toLowerCase();
-      const lv = document.getElementById("levelFilter").value;
-      const sc = document.getElementById("sectorFilter").value;
-      const onlySel = document.getElementById("selectedFilter").value === "selected";
-      render(q, lv, sc, onlySel);
-    }
-
-    // ===== RENDER =====
-    function werkUrl(n) {
-      return `https://www.werk.nl/werkzoekenden/beroepen-en-opleidingen/beroepen/zoeken?zoekterm=${encodeURIComponent(n)}`;
-    }
-
-    function render(q = "", lv = "all", sc = "all", onlySel = false) {
-      const container = document.getElementById("beroepenContainer");
-      container.innerHTML = "";
-
-      const filtered = beroepen.filter(b => {
-        const e = getEntry(b);
-        return (!q || (b.n||"").toLowerCase().includes(q) || (b.s||"").toLowerCase().includes(q))
-          && (lv === "all" || b.lvl === lv)
-          && (sc === "all" || b.s === sc)
-          && (!onlySel || e.like === true);
-      });
-
-      document.getElementById("statusLine").textContent =
-        `Resultaat: ${filtered.length} van ${beroepen.length} beroepen`;
-
-      filtered.forEach(b => {
-        const entry = getEntry(b);
-        const lvl = b.lvl || "";
-        const badgeClass = lvl === "Hoger" ? "bg-blue-100 text-blue-700"
-          : lvl === "Basis" ? "bg-slate-100 text-slate-700" : "bg-green-100 text-green-700";
-        const lvlLabel = lvl === "Basis" ? "Basisvakmanschap"
-          : lvl === "Middelbaar" ? "Middelbaar" : lvl === "Hoger" ? "Hoger/Wetenschappelijk" : lvl;
-        const url = (b.url && b.url.startsWith("http")) ? b.url : werkUrl(b.n);
-        const k = (b.s + "||" + b.n).toLowerCase();
-
-        const card = document.createElement("div");
-        card.className = "bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col justify-between";
-        card.innerHTML = `
-          <div>
-            <div class="flex justify-between items-start mb-2 gap-2">
-              <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400 leading-tight flex-1">${esc(b.s)}</span>
-              <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase ${badgeClass} whitespace-nowrap">${esc(lvlLabel)}</span>
-            </div>
-            <h3 class="text-base font-bold text-brand-blue mb-1 leading-snug">${esc(b.n)}</h3>
-            <p class="text-[11px] text-slate-500 mb-4">${esc(b.info || "")}</p>
-            <div class="grid grid-cols-2 gap-4 mb-4 border-t border-b border-slate-100 py-3">
-              <label class="flex items-center gap-2 cursor-pointer">
-                <input data-k="${esc(k)}" data-field="like" type="checkbox"
-                       class="w-4 h-4 accent-brand-orange" ${entry.like ? "checked" : ""}>
-                <span class="text-xs font-semibold">Past bij mij</span>
-              </label>
-              <label class="flex items-center gap-2 cursor-pointer opacity-70">
-                <input data-k="${esc(k)}" data-field="doelgroep" type="checkbox"
-                       class="w-4 h-4 accent-brand-blue" ${entry.doelgroep ? "checked" : ""}>
-                <span class="text-xs font-semibold">Doelgroep-reg.</span>
-              </label>
-            </div>
-          </div>
-          <div class="space-y-3">
-            <textarea data-k="${esc(k)}" data-field="note"
-              placeholder="Mijn notities: Wat spreekt me aan? Wat houdt me tegen?"
-              class="w-full bg-slate-50 rounded-xl p-3 text-xs">${esc(entry.note || "")}</textarea>
-            <a href="${url}" target="_blank" rel="noopener"
-               class="text-[10px] font-bold text-brand-blue hover:text-brand-orange">
-              ℹ️ Meer info (Werk.nl)
-            </a>
-          </div>`;
-
-        container.appendChild(card);
-      });
-
-      container.querySelectorAll("input[type=checkbox]").forEach(cb => {
-        cb.addEventListener("change", e => {
-          const k = e.target.dataset.k, f = e.target.dataset.field;
-          userState[k] = userState[k] || { like: false, doelgroep: false, note: "" };
-          userState[k][f] = e.target.checked;
-          saveUser();
-          if (document.getElementById("selectedFilter").value === "selected") filterContent();
-        });
-      });
-
-      container.querySelectorAll("textarea").forEach(ta => {
-        ta.addEventListener("input", e => {
-          const k = e.target.dataset.k;
-          userState[k] = userState[k] || { like: false, doelgroep: false, note: "" };
-          userState[k].note = e.target.value;
-          saveUser();
-        });
-      });
-    }
-
-    // ===== PDF PARSER (kolom-bewust, sector-inheritantie links->rechts) =====
-    function isLevelStr(t) {
-      const l = t.toLowerCase();
-      if (l.includes("basisvakmanschap")) return "Basis";
-      if (l.includes("middelbaar beroepsniveau")) return "Middelbaar";
-      if (l.includes("hoger / wetenschappelijk")) return "Hoger";
-      return null;
-    }
-
-    function cleanBullet(raw) {
-      let t = raw.replace(/^[▪•●‣⁃–\-]\s*/u, "").trim();
-      t = t.replace(/\d[\d\s,]*\s*$/, "").trim();
-      t = t.replace(/,\s*$/, "").trim();
-      return t;
-    }
-
-    function isNoise(name) {
-      if (!name || name.length < 4) return true;
-      if (["Home", "UWV"].includes(name)) return true;
-      if (name.toLowerCase().includes("kansrijke beroepen")) return true;
-      return (name.match(/[A-Za-zÀ-ž]/gu) || []).length < 4;
-    }
-
-    async function parsePdf(arrayBuffer) {
-      if (!window.pdfjsLib) throw new Error("PDF.js niet geladen.");
-      pdfjsLib.GlobalWorkerOptions.workerSrc =
-        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-
-      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-      const items = [];
-
-      for (let p = 3; p <= pdf.numPages; p++) {
-        const page = await pdf.getPage(p);
-        const vp = page.getViewport({ scale: 1 });
-        const content = await page.getTextContent();
-
-        for (const item of content.items || []) {
-          const str = (item.str || "").trim();
-          if (!str) continue;
-          const x = item.transform?.[4] ?? 0;
-          const y = item.transform?.[5] ?? 0;
-          if (x < 0) continue;  // skip hidden template elements
-
-          // Font size from transform matrix
-          const fs = Math.sqrt((item.transform[0]||0)**2 + (item.transform[1]||0)**2);
-          if (fs > 0 && (fs < 6 || fs > 20)) continue;
-
-          items.push({
-            page: p,
-            x,
-            y: vp.height - y,
-            col: x < 300 ? 0 : 1,
-            str
-          });
-        }
-      }
-
-      // Sort: page -> col (left=0, right=1) -> y
-      items.sort((a, b) => a.page !== b.page ? a.page - b.page :
-        a.col !== b.col ? a.col - b.col : a.y - b.y);
-
-      const ctx = {};
-      const leftSector = {};  // page -> sector from left column
-      const result = [];
-      const BULLET = /^[▪•●‣⁃]/u;
-
-      for (const item of items) {
-        const text = item.str;
-        const ck = `${item.page}:${item.col}`;
-
-        if (!ctx[ck]) {
-          // Right column inherits left column's sector if no sector set yet
-          ctx[ck] = {
-            sector: item.col === 1 ? (leftSector[item.page] || null) : null,
-            level: null
-          };
-        }
-        const c = ctx[ck];
-
-        if (PDF_SECTORS.has(text)) {
-          c.sector = text;
-          c.level = null;
-          if (item.col === 0) leftSector[item.page] = text;
-          continue;
-        }
-
-        const lvl = isLevelStr(text);
-        if (lvl) { c.level = lvl; continue; }
-
-        if (!BULLET.test(text)) continue;
-
-        // Fallback: use left column sector if right column still has none
-        if (!c.sector && item.col === 1) c.sector = leftSector[item.page] || null;
-
-        if (!c.sector || !c.level) continue;
-
-        const name = cleanBullet(text);
-        if (isNoise(name)) continue;
-
-        result.push({ s: c.sector, n: name, lvl: c.level, info: "Uit UWV-lijst kansrijke beroepen", url: "" });
-      }
-
-      const seen = new Map();
-      for (const b of result) {
-        const k = (b.s + "||" + b.n).toLowerCase();
-        if (!seen.has(k)) seen.set(k, b);
-      }
-
-      const lvlO = { Basis: 1, Middelbaar: 2, Hoger: 3 };
-      return [...seen.values()].sort((a, b) => {
-        const s = a.s.localeCompare(b.s, "nl");
-        return s !== 0 ? s : (lvlO[a.lvl] || 9) - (lvlO[b.lvl] || 9);
-      });
-    }
-
-    // ===== INSTELLINGEN KNOPPEN =====
-    function setMsg(msg, ok = true) {
-      document.getElementById("settingsMsg").innerHTML =
-        `<span class="${ok ? "text-emerald-700" : "text-rose-700"} font-semibold">${esc(msg)}</span>`;
-    }
-
-    document.getElementById("pdfFileInput").addEventListener("change", async e => {
-      const file = e.target.files?.[0];
-      if (!file) return;
-      setMsg("Bezig met inlezen (kolom-bewuste parser)...");
-      try {
-        const parsed = await parsePdf(await file.arrayBuffer());
-        if (!parsed.length) { setMsg("Geen beroepen gevonden.", false); return; }
-        saveData(parsed);
-        refreshSectors();
-        filterContent();
-        setMsg(`Klaar! ${parsed.length} beroepen ingeladen.`);
-        showPortal();
-      } catch (err) { setMsg(`Mislukt: ${err.message}`, false); }
-    });
-
-    document.getElementById("useBuiltinBtn").addEventListener("click", () => {
-      localStorage.removeItem(KEY_DATA);
-      beroepen = BUILTIN;
-      refreshSectors();
-      filterContent();
-      updateBadge();
-      setMsg(`Ingebouwde data hersteld: ${BUILTIN.length} beroepen.`);
-      showPortal();
-    });
-
-    document.getElementById("clearNotesBtn").addEventListener("click", () => {
-      localStorage.removeItem(KEY_USER);
-      userState = {};
-      setMsg("Notities en vinkjes gewist.");
-      filterContent();
-    });
-
-    // ===== EXPORT =====
-    document.getElementById("exportBtn").addEventListener("click", () => {
-      buildExport();
-      window.print();
-    });
-
-    function buildExport() {
-      const list = document.getElementById("exportList");
-      const meta = document.getElementById("exportMeta");
-      const sel = beroepen.map(b => ({ b, e: getEntry(b) })).filter(x => x.e.like === true);
-
-      list.innerHTML = "";
-      meta.textContent = `Gemaakt op: ${new Date().toLocaleString("nl-NL")} • Aantal: ${sel.length}`;
-
-      if (!sel.length) {
-        list.innerHTML = `<div class="p-4 border rounded-xl bg-slate-50"><div class="font-bold">Geen selectie</div><p class="text-slate-600 text-sm mt-1">Vink "Past bij mij" aan bij een beroep.</p></div>`;
-        return;
-      }
-
-      const groups = {};
-      sel.forEach(({ b, e }) => {
-        if (!groups[b.s]) groups[b.s] = [];
-        groups[b.s].push({ b, e });
-      });
-
-      Object.keys(groups).sort((a, b) => a.localeCompare(b, "nl")).forEach(sector => {
-        const block = document.createElement("div");
-        block.className = "border rounded-2xl p-4";
-        block.innerHTML = `<div class="text-sm font-bold text-slate-600 uppercase tracking-wider">${esc(sector)}</div><div class="items mt-3 space-y-3"></div>`;
-        const items = block.querySelector(".items");
-        groups[sector].forEach(({ b, e }) => {
-          const row = document.createElement("div");
-          row.className = "p-3 rounded-xl bg-slate-50 border";
-          const note = (e.note || "").trim();
-          row.innerHTML = `
-            <div class="flex flex-wrap items-center justify-between gap-2">
-              <div class="font-bold text-brand-blue">${esc(b.n)}</div>
-              <div class="text-xs font-semibold text-slate-600">${esc(b.lvl || "")}</div>
-            </div>
-            <div class="mt-2 text-sm text-slate-800">
-              ${note ? esc(note) : '<span class="text-slate-500">Geen notities.</span>'}
-            </div>`;
-          items.appendChild(row);
-        });
-        list.appendChild(block);
-      });
-    }
-
-    // ===== START =====
+  function loadData() {
+    try { const r = JSON.parse(localStorage.getItem(STORAGE_KEY)); return r?.beroepen || null; } catch { return null; }
+  }
+  function saveData(d) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ savedAt: new Date().toISOString(), beroepen: d }));
+    beroepen = d;
     updateBadge();
-    refreshSectors();
+  }
+  function loadUserState() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_STATE)) || {}; } catch { return {}; }
+  }
+  function saveUserState() {
+    localStorage.setItem(STORAGE_STATE, JSON.stringify(userState));
+  }
+  function updateBadge() {
+    try {
+      const r = JSON.parse(localStorage.getItem(STORAGE_KEY));
+      const dt = r?.savedAt ? new Date(r.savedAt) : null;
+      document.getElementById('dataBadge').textContent = dt
+        ? `Bijgewerkt: ${dt.toLocaleString('nl-NL')}`
+        : `Standaard 2025-2026 · ${beroepen.length} beroepen`;
+    } catch { document.getElementById('dataBadge').textContent = `${beroepen.length} beroepen`; }
+  }
+
+  function getEntry(b) {
+    const k = `${b.s}||${b.n}`.toLowerCase();
+    if (!userState[k]) userState[k] = { like: false, doelgroep: false, note: '' };
+    return userState[k];
+  }
+
+  // =====================================================================
+  // TABS
+  // =====================================================================
+  function showPortal() {
+    document.getElementById('portalView').classList.remove('hidden');
+    document.getElementById('settingsView').classList.add('hidden');
+    document.getElementById('tabPortalBtn').style.cssText   = 'background:var(--blue);color:white;';
+    document.getElementById('tabSettingsBtn').style.cssText = 'background:white;color:#374151;border:1px solid #e5e7eb;';
+  }
+  function showSettings() {
+    document.getElementById('settingsView').classList.remove('hidden');
+    document.getElementById('portalView').classList.add('hidden');
+    document.getElementById('tabSettingsBtn').style.cssText = 'background:var(--blue);color:white;';
+    document.getElementById('tabPortalBtn').style.cssText   = 'background:white;color:#374151;border:1px solid #e5e7eb;';
+  }
+
+  // =====================================================================
+  // FILTERS
+  // =====================================================================
+  document.getElementById('searchInput').addEventListener('keyup', filterContent);
+  document.getElementById('levelFilter').addEventListener('change', filterContent);
+  document.getElementById('sectorFilter').addEventListener('change', filterContent);
+  document.getElementById('selectedFilter').addEventListener('change', filterContent);
+
+  function resetFilters() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('levelFilter').value = 'all';
+    document.getElementById('sectorFilter').value = 'all';
+    document.getElementById('selectedFilter').value = 'all';
+    filterContent();
+  }
+
+  function refreshSectorDropdown() {
+    const sel = document.getElementById('sectorFilter');
+    const sectors = [...new Set(beroepen.map(b => b.s))].sort((a,b) => a.localeCompare(b,'nl'));
+    sel.innerHTML = '<option value="all">Alle sectoren</option>' +
+      sectors.map(s => `<option value="${esc(s)}">${esc(s)}</option>`).join('');
+  }
+
+  function filterContent() {
+    const q    = document.getElementById('searchInput').value.toLowerCase();
+    const lvl  = document.getElementById('levelFilter').value;
+    const sec  = document.getElementById('sectorFilter').value;
+    const sel  = document.getElementById('selectedFilter').value === 'selected';
+    render(q, lvl, sec, sel);
+  }
+
+  // =====================================================================
+  // RENDER CARDS
+  // =====================================================================
+  function lvlBadge(lvl) {
+    if (lvl.includes('Hoger')) return 'lvl-hoger';
+    if (lvl.includes('Basis')) return 'lvl-basis';
+    return 'lvl-mid';
+  }
+  function lvlLabel(lvl) {
+    if (lvl.includes('Hoger')) return 'HBO/WO';
+    if (lvl.includes('Basis')) return 'BASIS';
+    return 'MBO';
+  }
+
+  function werkNlUrl(name) {
+    return `https://www.werk.nl/werkzoekenden/beroepen-en-opleidingen/beroepen/zoeken?zoekterm=${encodeURIComponent(name)}`;
+  }
+
+  function esc(s) {
+    return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+  }
+
+  function render(q='', lvl='all', sec='all', onlySel=false) {
+    const container = document.getElementById('beroepenContainer');
+    container.innerHTML = '';
+
+    const filtered = beroepen.filter(b => {
+      const entry = getEntry(b);
+      const mQ  = !q || (b.n||'').toLowerCase().includes(q) || (b.s||'').toLowerCase().includes(q);
+      const mL  = lvl === 'all' || (b.lvl||'').includes(lvl);
+      const mS  = sec === 'all' || b.s === sec;
+      const mSel = !onlySel || entry.like;
+      return mQ && mL && mS && mSel;
+    });
+
+    document.getElementById('statusLine').textContent = `${filtered.length} van ${beroepen.length} beroepen`;
+
+    filtered.forEach(b => {
+      const entry  = getEntry(b);
+      const k      = `${b.s}||${b.n}`.toLowerCase();
+      const infoUrl = (b.url && b.url.startsWith('http')) ? b.url : werkNlUrl(b.n);
+
+      const card = document.createElement('div');
+      card.className = 'card bg-white rounded-2xl p-5 shadow-sm border border-slate-100 flex flex-col justify-between';
+
+      card.innerHTML = `
+        <div>
+          <div class="flex justify-between items-start gap-2 mb-2">
+            <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400 leading-tight">${esc(b.s)}</span>
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase flex-shrink-0 ${lvlBadge(b.lvl)}">${lvlLabel(b.lvl)}</span>
+          </div>
+
+          <h3 class="text-base font-bold mb-3 leading-snug" style="color:var(--blue)">${esc(b.n)}</h3>
+
+          <label class="flex items-center gap-2 cursor-pointer mb-3 group">
+            <input data-k="${esc(k)}" data-f="like" type="checkbox"
+                   class="w-4 h-4 rounded cursor-pointer" style="accent-color:var(--orange);"
+                   ${entry.like ? 'checked' : ''}>
+            <span class="text-sm font-semibold text-slate-700 group-hover:text-orange-600 transition-colors">Aangevinkt</span>
+          </label>
+
+          <label class="flex items-center gap-2 cursor-pointer mb-4">
+            <input data-k="${esc(k)}" data-f="doelgroep" type="checkbox"
+                   class="w-4 h-4 rounded cursor-pointer" style="accent-color:var(--mid);"
+                   ${entry.doelgroep ? 'checked' : ''}>
+            <span class="text-sm text-slate-500">Doelgroep-registratie</span>
+          </label>
+        </div>
+
+        <div class="space-y-2.5">
+          <textarea data-k="${esc(k)}" data-f="note"
+            placeholder="Notities: wat trekt me aan? Wat houdt me tegen?"
+            class="w-full bg-slate-50 border border-slate-100 rounded-xl p-3 text-xs text-slate-700 leading-relaxed">${esc(entry.note||'')}</textarea>
+
+          <a href="${infoUrl}" target="_blank" rel="noopener"
+             class="inline-flex items-center gap-1 text-xs font-semibold hover:underline"
+             style="color:var(--mid);">
+            ℹ Meer info op Werk.nl
+          </a>
+        </div>
+      `;
+
+      container.appendChild(card);
+    });
+
+    // Events
+    container.querySelectorAll('input[type=checkbox]').forEach(cb => {
+      cb.addEventListener('change', e => {
+        const k = e.target.dataset.k, f = e.target.dataset.f;
+        userState[k] = userState[k] || { like:false, doelgroep:false, note:'' };
+        userState[k][f] = e.target.checked;
+        saveUserState();
+        if (document.getElementById('selectedFilter').value === 'selected') filterContent();
+      });
+    });
+    container.querySelectorAll('textarea').forEach(ta => {
+      ta.addEventListener('input', e => {
+        const k = e.target.dataset.k, f = e.target.dataset.f;
+        userState[k] = userState[k] || { like:false, doelgroep:false, note:'' };
+        userState[k][f] = e.target.value;
+        saveUserState();
+      });
+    });
+  }
+
+  // =====================================================================
+  // PDF PARSER (browser-based, herschreven voor correcte kolom-detectie)
+  // =====================================================================
+  const SECTORS_LIST = [
+    "Bouw","Installatie","Voertuigentechniek","Industrie",
+    "Transport - logistiek","Veiligheid","Detailhandel","Horeca",
+    "Landbouw, natuur en milieu","Schoonmaak - reiniging",
+    "Commercieel \u2013 HR - strategie","Financieel en administratie \u2013 juridisch",
+    "ICT","Overheid","Onderwijs - pedagogisch","Zorg"
+  ];
+
+  function normalizeSector(t) {
+    return t.replace(/\s*-\s*/g,' - ').replace(/\s*\u2013\s*/g,' \u2013 ').replace(/\s+/g,' ').trim();
+  }
+
+  function findSectors(text) {
+    const norm = normalizeSector(text);
+    const found = [];
+    let remaining = norm;
+    for (const s of SECTORS_LIST) {
+      if (remaining.includes(s)) {
+        found.push(s);
+        remaining = remaining.replace(s, '').trim();
+      }
+    }
+    const leftover = remaining.replace(/[\s,./()]/g, '');
+    return leftover.length > 3 ? [] : found;
+  }
+
+  function detectLevel(text) {
+    const t = text.toLowerCase();
+    if (t.includes('basisvakmanschap') && !t.includes('middelbaar')) return 'Basis';
+    if (t.includes('middelbaar beroepsniveau')) return 'Middelbaar';
+    if (t.includes('hoger / wetenschappelijk')) return 'Hoger';
+    return null;
+  }
+
+  function cleanName(t) {
+    return t.replace(/[\s,]*\d+[\s,\d]*$/, '').trim();
+  }
+
+  function isNoise(t) {
+    if (t.length < 4) return true;
+    if (/^[\d\s,.\-\u2013]+$/.test(t)) return true;
+    const letters = (t.match(/[A-Za-z\u00C0-\u024F]/g)||[]).length;
+    return letters < 3;
+  }
+
+  function isFooter(text) {
+    if (/^\d+[A-Z\s]/.test(text)) return true;
+    const t = text.toLowerCase().trim();
+    return t === 'home' || t === 'uwv' || t.startsWith('home ');
+  }
+
+  async function parsePdfFile(arrayBuffer) {
+    if (!window.pdfjsLib) throw new Error('PDF.js niet geladen. Ververs de pagina.');
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    const COL_SPLIT = 460;
+    const allBeroepen = [];
+
+    for (let p = 1; p <= pdf.numPages; p++) {
+      // Skip cover (p1), intro (p2), colofon (last)
+      if (p === 1 || p === 2 || p === pdf.numPages) continue;
+
+      const page    = await pdf.getPage(p);
+      const content = await page.getTextContent();
+
+      // Build word list with positions
+      const items = (content.items || [])
+        .filter(it => it.str && it.str.trim() && (it.transform?.[4] ?? 0) >= 0)
+        .map(it => ({
+          x: it.transform[4],
+          y: it.transform[5],
+          text: it.str.trim()
+        }));
+
+      // Group by row (y tolerance 3px)
+      const rowMap = new Map();
+      for (const it of items) {
+        const yKey = Math.round(it.y / 3) * 3;
+        if (!rowMap.has(yKey)) rowMap.set(yKey, { left:[], right:[] });
+        if (it.x < COL_SPLIT) rowMap.get(yKey).left.push(it);
+        else                   rowMap.get(yKey).right.push(it);
+      }
+
+      // Build per-column ordered line list
+      const colLines = { left:[], right:[] };
+      for (const [yKey, sides] of [...rowMap.entries()].sort((a,b) => b[0]-a[0])) {
+        for (const col of ['left','right']) {
+          const words = sides[col].sort((a,b) => a.x - b.x);
+          const text  = words.map(w => w.text).join(' ').replace(/\u00A0/g,' ').replace(/\s+/g,' ').trim();
+          if (text) colLines[col].push({ y: yKey, text });
+        }
+      }
+
+      // Process each column independently
+      for (const col of ['left','right']) {
+        const lines = colLines[col].sort((a,b) => b.y - a.y); // top to bottom (y descends in PDF)
+        let sector = null, level = null;
+        let i = 0;
+
+        while (i < lines.length) {
+          const { y, text } = lines[i];
+
+          if (isFooter(text)) { i++; continue; }
+
+          // Sector detection (not on bullet lines)
+          if (!text.startsWith('▪')) {
+            const secs = findSectors(text);
+            if (secs.length) {
+              sector = secs[0];
+              level  = null;
+              i++; continue;
+            }
+            const lvl = detectLevel(text);
+            if (lvl) { level = lvl; i++; continue; }
+          }
+
+          // Bullet
+          if (text.startsWith('▪')) {
+            let bulletText = text.slice(1).trim();
+
+            // Look ahead for continuation
+            if (i + 1 < lines.length) {
+              const next = lines[i + 1];
+              const gap  = Math.abs(y - next.y);
+              if (gap < 25 && !next.text.startsWith('▪') &&
+                  !detectLevel(next.text) && !findSectors(next.text).length && !isFooter(next.text)) {
+
+                // If bullet ends with footnote digit, next line is likely the PREFIX
+                if (/\w\d+$/.test(bulletText)) {
+                  bulletText = next.text + ' ' + bulletText;
+                } else {
+                  bulletText = bulletText + ' ' + next.text;
+                }
+                i++;
+              }
+            }
+
+            const name = cleanName(bulletText);
+            if (!isNoise(name) && sector && level) {
+              allBeroepen.push({ s: sector, n: name, lvl: level,
+                info: 'Uit UWV-lijst kansrijke beroepen', url: '' });
+            }
+          }
+
+          i++;
+        }
+      }
+    }
+
+    // Deduplicate
+    const seen = new Set();
+    return allBeroepen.filter(b => {
+      const k = `${b.s}||${b.n}`.toLowerCase();
+      if (seen.has(k)) return false;
+      seen.add(k); return true;
+    });
+  }
+
+  // =====================================================================
+  // INSTELLINGEN ACTIES
+  // =====================================================================
+  document.getElementById('pdfFileInput').addEventListener('change', async () => {
+    const file = document.getElementById('pdfFileInput').files?.[0];
+    if (!file) return;
+    setMsg('⏳ PDF wordt gelezen…', 'slate');
+    try {
+      const bytes   = await file.arrayBuffer();
+      const parsed  = await parsePdfFile(bytes);
+      if (!parsed.length) { setMsg('❌ Geen beroepen gevonden. Probeer de officiële UWV PDF.', 'red'); return; }
+      saveData(parsed);
+      refreshSectorDropdown();
+      filterContent();
+      setMsg(`✅ Klaar! ${parsed.length} beroepen ingeladen.`, 'green');
+      showPortal();
+    } catch(e) {
+      setMsg(`❌ Fout: ${e.message}`, 'red');
+    }
+  });
+
+  function loadDefault() {
+    saveData(INGEBOUWDE_DATA);
+    refreshSectorDropdown();
+    filterContent();
+    setMsg('✅ Standaard data 2025–2026 geladen.', 'green');
+    showPortal();
+  }
+
+  function clearUserState() {
+    localStorage.removeItem(STORAGE_STATE);
+    userState = {};
+    setMsg('✅ Jouw notities en vinkjes zijn gewist.', 'green');
+    filterContent();
+  }
+
+  function setMsg(msg, color) {
+    const colors = { green:'text-emerald-700', red:'text-red-600', slate:'text-slate-600' };
+    document.getElementById('settingsMsg').innerHTML =
+      `<span class="font-semibold ${colors[color]||'text-slate-600'}">${msg}</span>`;
+  }
+
+  // =====================================================================
+  // EXPORT (print)
+  // =====================================================================
+  document.getElementById('exportBtn').addEventListener('click', () => {
+    buildExport();
+    window.print();
+  });
+
+  function buildExport() {
+    const selected = beroepen
+      .map(b => ({ b, entry: getEntry(b) }))
+      .filter(x => x.entry.like);
+
+    const exportList = document.getElementById('exportList');
+    exportList.innerHTML = '';
+
+    const now = new Date();
+    document.getElementById('exportMeta').textContent =
+      `Aangemaakt: ${now.toLocaleString('nl-NL')}`;
+    document.getElementById('exportSubtitle').textContent =
+      selected.length
+        ? `${selected.length} beroep${selected.length !== 1 ? 'en' : ''} geselecteerd`
+        : 'Geen beroepen geselecteerd';
+
+    if (!selected.length) {
+      exportList.innerHTML = `
+        <div class="p-5 border rounded-xl bg-slate-50 text-slate-600 text-sm">
+          Je hebt nog geen beroepen aangevinkt. Ga naar het portaal en vink beroepen aan via het selectievakje op elke kaart.
+        </div>`;
+      return;
+    }
+
+    // Group by sector
+    const groups = {};
+    for (const item of selected) {
+      const s = item.b.s || 'Overig';
+      if (!groups[s]) groups[s] = [];
+      groups[s].push(item);
+    }
+
+    // Group by level within sector
+    const lvlOrder = { Basis:0, Middelbaar:1, Hoger:2 };
+
+    for (const sector of Object.keys(groups).sort((a,b) => a.localeCompare(b,'nl'))) {
+      const items = groups[sector].sort((a,b) =>
+        (lvlOrder[a.b.lvl]||9) - (lvlOrder[b.b.lvl]||9) ||
+        a.b.n.localeCompare(b.b.n,'nl')
+      );
+
+      const block = document.createElement('div');
+      block.className = 'export-card rounded-2xl overflow-hidden';
+
+      // Sector header
+      const header = document.createElement('div');
+      header.className = 'export-sector-header px-5 py-3 border-b border-slate-200';
+      header.innerHTML = `<div class="font-bold text-sm uppercase tracking-wider" style="color:var(--blue)">${esc(sector)}</div>`;
+      block.appendChild(header);
+
+      // Entries
+      const body = document.createElement('div');
+      body.className = 'divide-y divide-slate-100';
+
+      for (const { b, entry } of items) {
+        const row = document.createElement('div');
+        row.className = 'px-5 py-4';
+
+        const note = (entry.note || '').trim();
+        const badgeCls = lvlBadge(b.lvl);
+        const badgeLbl = lvlLabel(b.lvl);
+
+        row.innerHTML = `
+          <div class="flex items-start justify-between gap-3 mb-1">
+            <div class="font-semibold text-sm leading-snug" style="color:var(--blue)">${esc(b.n)}</div>
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold flex-shrink-0 export-lvl-badge ${badgeCls}">${badgeLbl}</span>
+          </div>
+          ${note
+            ? `<div class="text-sm text-slate-700 leading-relaxed mt-1.5 bg-slate-50 rounded-lg p-3">${esc(note)}</div>`
+            : `<div class="text-xs text-slate-400 mt-1 italic">Geen notities ingevuld.</div>`
+          }
+        `;
+        body.appendChild(row);
+      }
+
+      block.appendChild(body);
+      exportList.appendChild(block);
+    }
+  }
+
+  // =====================================================================
+  // INIT
+  // =====================================================================
+  function init() {
+    showPortal();
+    updateBadge();
+    refreshSectorDropdown();
     render();
-    document.getElementById("statusLine").textContent = `Data geladen: ${beroepen.length} beroepen`;
+  }
+
+  // PDF.js worker
+  window.addEventListener('load', () => {
+    if (window.pdfjsLib) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+  });
   </script>
+
+  <!-- PDF.js voor upload-functie -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>init();</script>
+
 </body>
 </html>
