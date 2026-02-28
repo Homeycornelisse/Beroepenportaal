@@ -471,80 +471,133 @@
     ]);
 
     function looksLikeNoise(line) {
-      const t = line.toLowerCase();
-      return (
-        t.includes("uwv") ||
-        t.includes("kansrijke beroepen") ||
-        t.includes("basisvakmanschap") ||
-        t.includes("middelbaar beroepsniveau") ||
-        t.includes("hoger / wetenschappelijk") ||
-        t.length <= 2
-      );
+  const t = (line || "").trim();
+  const lower = t.toLowerCase();
+
+  // lege/te korte regels
+  if (t.length < 4) return true;
+
+  // alleen cijfers/tekens (zoals "3, 4" of "2026")
+  if (/^[0-9\s,.\-–]+$/.test(t)) return true;
+
+  // 1 woord dat een sectornaam is (zoals "Bouw")
+  if (SECTORS.has(t)) return true;
+
+  // typische kopjes/ruis uit de PDF
+  const noiseParts = [
+    "uwv",
+    "kansrijke beroepen",
+    "basisvakmanschap",
+    "middelbaar beroepsniveau",
+    "hoger / wetenschappelijk",
+    "inhoud",
+    "colofon",
+    "bron",
+    "pagina",
+    "tabel",
+    "figuur"
+  ];
+  if (noiseParts.some(p => lower.includes(p))) return true;
+
+  // losse woorden die vaak uit layout komen
+  const weirdSingles = ["midden", "weg", "links", "rechts", "boven", "onder"];
+  if (weirdSingles.includes(lower)) return true;
+
+  // erg veel leestekens of vreemde mix
+  const letters = (t.match(/[A-Za-zÀ-ÿ]/g) || []).length;
+  const digits = (t.match(/[0-9]/g) || []).length;
+  if (letters < 3) return true;          // bijna geen letters = meestal rommel
+  if (digits > 0 && letters < 8) return true; // korte mix met cijfers = vaak voetnoten/paginanrs
+
+  // hele lange zinnen (meestal uitlegtekst)
+  if (t.length > 80) return true;
+
+  return false;
+}
+
+function cleanBeroepLine(raw) {
+  let t = (raw || "").trim();
+
+  // haal bullet-tekens weg
+  t = t.replace(/^▪\s*/, "").trim();
+
+  // haal voetnoot-eindcijfers weg (bijv. "... 3" of "... 3, 4")
+  t = t.replace(/\s*[0-9]+(\s*,\s*[0-9]+)*\s*$/, "").trim();
+
+  // dubbele spaties weg
+  t = t.replace(/\s+/g, " ").trim();
+
+  return t;
+}
+
+function parseBeroepenFromText(text) {
+  const lines = (text || "")
+    .split("\n")
+    .map(l => l.replace(/\u00A0/g, " ").trim())
+    .filter(Boolean);
+
+  let currentSector = null;
+  let currentLevel = null;
+  const out = [];
+
+  for (let raw of lines) {
+    const line = raw.replace(/\s+/g, " ").trim();
+    const lower = line.toLowerCase();
+
+    // sector herkennen (exact of bijna exact)
+    for (const s of SECTORS) {
+      if (line === s) currentSector = s;
     }
 
-    function parseBeroepenFromText(text) {
-      const lines = (text || "")
-        .split("\n")
-        .map(l => normalizeName(l))
-        .filter(Boolean);
+    // niveau herkennen
+    if (lower.includes("basisvakmanschap")) currentLevel = "Basis";
+    else if (lower.includes("middelbaar beroepsniveau")) currentLevel = "Middelbaar";
+    else if (lower.includes("hoger / wetenschappelijk")) currentLevel = "Hoger";
 
-      let currentSector = null;
-      let currentLevel = null;
-      const out = [];
+    // alleen opslaan als we in sector + niveau zitten
+    if (!currentSector || !currentLevel) continue;
 
-      for (let raw of lines) {
-        // sector herkennen (ruim)
-        for (const s of SECTORS) {
-          if (raw === s || raw.includes(s)) currentSector = s;
-        }
+    const cleaned = cleanBeroepLine(line);
 
-        // niveau herkennen (ruim)
-        const lower = raw.toLowerCase();
-        if (lower.includes("basisvakmanschap")) currentLevel = "Basis";
-        if (lower.includes("middelbaar beroepsniveau")) currentLevel = "Middelbaar";
-        if (lower.includes("hoger / wetenschappelijk")) currentLevel = "Hoger";
+    // filter rommel weg
+    if (looksLikeNoise(cleaned)) continue;
 
-        // beroep regel herkennen
-        const cleaned = raw.replace(/^▪\s*/, "").trim();
-        const isBullet = raw.startsWith("▪");
+    // extra check: beroep heeft meestal meerdere letters en vaak meerdere woorden
+    const wordCount = cleaned.split(" ").filter(Boolean).length;
+    const letters = (cleaned.match(/[A-Za-zÀ-ÿ]/g) || []).length;
+    if (letters < 4) continue;
+    if (wordCount < 1) continue;
 
-        // Neem bullets altijd, en neem ook andere regels als ze niet “ruis” zijn
-        if (currentSector && currentLevel && !looksLikeNoise(cleaned)) {
-          // Kleine extra filter: voorkom dat hele zinnen/headers mee gaan
-          // (dit is bewust mild)
-          if (isBullet || (cleaned.length >= 3 && cleaned.length <= 80)) {
-            out.push({
-              s: currentSector,
-              n: cleaned,
-              lvl: currentLevel,
-              info: "Uit UWV-lijst kansrijke beroepen"
-            });
-          }
-        }
-      }
+    out.push({
+      s: currentSector,
+      n: cleaned,
+      lvl: currentLevel,
+      info: "Uit UWV-lijst kansrijke beroepen"
+    });
+  }
 
-      // dubbele eruit
-      const unique = [];
-      const seen = new Set();
-      for (const b of out) {
-        const k = keyForBeroep(b);
-        if (seen.has(k)) continue;
-        seen.add(k);
-        unique.push(b);
-      }
+  // dubbelen eruit
+  const unique = [];
+  const seen = new Set();
+  for (const b of out) {
+    const k = `${b.s}||${b.n}`.toLowerCase();
+    if (seen.has(k)) continue;
+    seen.add(k);
+    unique.push(b);
+  }
 
-      // sorteren
-      const lvlOrder = { "Basis": 1, "Middelbaar": 2, "Hoger": 3 };
-      unique.sort((a,b) => {
-        const s = a.s.localeCompare(b.s, "nl");
-        if (s !== 0) return s;
-        const l = (lvlOrder[a.lvl] || 9) - (lvlOrder[b.lvl] || 9);
-        if (l !== 0) return l;
-        return a.n.localeCompare(b.n, "nl");
-      });
+  // sorteren
+  const lvlOrder = { "Basis": 1, "Middelbaar": 2, "Hoger": 3 };
+  unique.sort((a,b) => {
+    const s = a.s.localeCompare(b.s, "nl");
+    if (s !== 0) return s;
+    const l = (lvlOrder[a.lvl] || 9) - (lvlOrder[b.lvl] || 9);
+    if (l !== 0) return l;
+    return a.n.localeCompare(b.n, "nl");
+  });
 
-      return unique;
-    }
+  return unique;
+}
 
     pdfFileInput.addEventListener("change", async () => {
       const file = pdfFileInput.files?.[0];
@@ -691,3 +744,4 @@
 
 </body>
 </html>
+
