@@ -29,7 +29,15 @@
 
     @media print {
       .no-print { display:none !important; }
+
+      /* Alles verbergen behalve export */
+      nav { display:none !important; }
+      #portalView { display:none !important; }
+      #settingsView { display:none !important; }
+
+      /* Alleen export laten zien */
       #exportView { display:block !important; }
+
       body { background: white !important; }
     }
   </style>
@@ -95,15 +103,31 @@
       <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 max-w-2xl">
         <h2 class="text-xl font-bold text-brand-blue mb-2">Instellingen</h2>
         <p class="text-sm text-slate-600 mb-4">
-          Upload de UWV PDF. Daarna vult het portaal zichzelf.
+          Download de UWV PDF en upload hem hier. Daarna vult het portaal zichzelf.
         </p>
 
-        <div class="mt-2">
+        <!-- UWV download link -->
+        <div class="mt-4 p-4 rounded-xl bg-slate-50 border">
+          <div class="text-sm font-bold text-slate-700 mb-2">Officiële UWV pagina</div>
+          <p class="text-sm text-slate-600 mb-3">
+            Hier kun je de nieuwste PDF met kansrijke beroepen downloaden.
+          </p>
+          <a
+            href="https://www.uwv.nl/nl/arbeidsmarktinformatie/kansen-beroep/kansrijke-beroepen"
+            target="_blank"
+            rel="noopener"
+            class="inline-block bg-brand-blue text-white px-4 py-2 rounded-lg font-bold hover:opacity-90"
+          >
+            Ga naar UWV pagina
+          </a>
+        </div>
+
+        <div class="mt-5">
           <label class="text-sm font-semibold text-slate-700">PDF uploaden</label>
           <input id="pdfFileInput" type="file" accept="application/pdf"
                  class="mt-2 w-full p-3 border rounded-xl text-sm bg-white">
           <p class="text-xs text-slate-500 mt-2">
-            Werkt ook op GitHub Pages. (PDF-link inladen is vaak geblokkeerd.)
+            Uploaden werkt goed op GitHub Pages.
           </p>
         </div>
 
@@ -147,9 +171,15 @@
       }
     });
 
+    function ensurePdfLib() {
+      if (!window.pdfjsLib) throw new Error("PDF-lezer is niet geladen. Ververs de pagina en probeer opnieuw.");
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+    }
+
     // ========= OPSLAG =========
-    const STORAGE_KEY = "bp2026_data_v4";
-    const STORAGE_USER_STATE = "bp2026_user_state_v4";
+    const STORAGE_KEY = "bp2026_data_v5";
+    const STORAGE_USER_STATE = "bp2026_user_state_v5";
 
     const demoBeroepen = [
       { s: "Bouw", n: "Timmerlieden (onderhoud en civiele bouw)", lvl: "Middelbaar", info: "Demo", url: "" },
@@ -235,20 +265,24 @@
     // ========= TABS =========
     const portalView = document.getElementById("portalView");
     const settingsView = document.getElementById("settingsView");
-    document.getElementById("tabPortalBtn").addEventListener("click", () => showPortal());
-    document.getElementById("tabSettingsBtn").addEventListener("click", () => showSettings());
+    const tabPortalBtn = document.getElementById("tabPortalBtn");
+    const tabSettingsBtn = document.getElementById("tabSettingsBtn");
+
+    tabPortalBtn.addEventListener("click", showPortal);
+    tabSettingsBtn.addEventListener("click", showSettings);
 
     function showPortal() {
       portalView.classList.remove("hidden");
       settingsView.classList.add("hidden");
-      document.getElementById("tabPortalBtn").className = "px-3 py-2 rounded-lg font-bold bg-brand-blue text-white hover:opacity-90";
-      document.getElementById("tabSettingsBtn").className = "px-3 py-2 rounded-lg font-bold bg-white border hover:bg-slate-50";
+      tabPortalBtn.className = "px-3 py-2 rounded-lg font-bold bg-brand-blue text-white hover:opacity-90";
+      tabSettingsBtn.className = "px-3 py-2 rounded-lg font-bold bg-white border hover:bg-slate-50";
     }
+
     function showSettings() {
       settingsView.classList.remove("hidden");
       portalView.classList.add("hidden");
-      document.getElementById("tabSettingsBtn").className = "px-3 py-2 rounded-lg font-bold bg-brand-blue text-white hover:opacity-90";
-      document.getElementById("tabPortalBtn").className = "px-3 py-2 rounded-lg font-bold bg-white border hover:bg-slate-50";
+      tabSettingsBtn.className = "px-3 py-2 rounded-lg font-bold bg-brand-blue text-white hover:opacity-90";
+      tabPortalBtn.className = "px-3 py-2 rounded-lg font-bold bg-white border hover:bg-slate-50";
     }
 
     // ========= FILTERS =========
@@ -287,8 +321,6 @@
     }
 
     // ========= WERK.NL LINKS =========
-    // 1) Als PDF een echte link heeft, gebruiken we die: b.url
-    // 2) Anders fallback: zoekpagina (werkt altijd)
     function werkNlFallbackZoekUrl(beroepNaam) {
       return `https://www.werk.nl/werkzoekenden/beroepen-en-opleidingen/beroepen/zoeken?zoekterm=${encodeURIComponent(beroepNaam)}`;
     }
@@ -361,7 +393,7 @@
                  class="text-[10px] font-bold text-brand-blue hover:text-brand-orange flex items-center gap-1">
                 ℹ️ Meer info (Werk.nl)
               </a>
-              ${b.url ? `<span class="text-[10px] text-slate-500">• link uit PDF</span>` : `<span class="text-[10px] text-slate-500">• zoeklink</span>`}
+              <span class="text-[10px] text-slate-500">${b.url ? "• link uit PDF" : "• zoeklink"}</span>
             </div>
           </div>
         `;
@@ -393,23 +425,9 @@
       });
     }
 
-    // ========= PDF INLEZEN (UPLOAD) =========
-    const settingsMsg = document.getElementById("settingsMsg");
-    const pdfFileInput = document.getElementById("pdfFileInput");
-    const useDemoBtn = document.getElementById("useDemoBtn");
-    const clearNotesBtn = document.getElementById("clearNotesBtn");
+    // ========= PDF LEZEN MET 2-KOLOMMEN FIX + LINKS =========
 
-    function setSettingsMsg(msg, ok=true) {
-      settingsMsg.innerHTML = `<span class="${ok ? "text-emerald-700" : "text-rose-700"} font-semibold">${escapeHtml(msg)}</span>`;
-    }
-
-    function ensurePdfLib() {
-      if (!window.pdfjsLib) throw new Error("PDF-lezer is niet geladen. Ververs de pagina en probeer opnieuw.");
-      pdfjsLib.GlobalWorkerOptions.workerSrc =
-        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-    }
-
-    // Sectoren komen letterlijk voor in de PDF (kopjes) :contentReference[oaicite:1]{index=1}
+    // Sectoren zoals in UWV-PDF
     const SECTORS = new Set([
       "Bouw",
       "Installatie",
@@ -439,7 +457,7 @@
     function cleanBulletName(raw) {
       let t = normalizeName(raw);
       t = t.replace(/^([▪•\-–])\s*/g, "").trim();
-      t = t.replace(/\s*[0-9]+(\s*,\s*[0-9]+)*\s*$/, "").trim(); // voetnoten/eindcijfers weg
+      t = t.replace(/\s*[0-9]+(\s*,\s*[0-9]+)*\s*$/, "").trim(); // voetnoten weg
       return t;
     }
 
@@ -451,18 +469,14 @@
       if (SECTORS.has(t)) return true;
       if (lower.includes("uwv")) return true;
       if (lower.includes("kansrijke beroepen")) return true;
-      if (lower.includes("algemeen")) return true;
       if (lower.includes("colofon")) return true;
       if (lower === "midden" || lower === "weg") return true;
-      // genoeg letters?
       const letters = (t.match(/[A-Za-zÀ-ÿ]/g) || []).length;
       if (letters < 4) return true;
       return false;
     }
 
-    // Leest per pagina:
-    // - Tekstitems => netjes per regel (y-groepering)
-    // - Link-annotaties => URL per regel (als het info-icoon klikbaar is)
+    // Leest per regel én splitst per kolom (GAP) + pakt link-annotaties
     async function extractRowsWithLinks(arrayBuffer) {
       ensurePdfLib();
       const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
@@ -477,15 +491,14 @@
           page.getAnnotations({ intent: "display" })
         ]);
 
-        // alleen echte url-links pakken
         const linkAnn = (annotations || [])
-          .filter(a => a && (a.url || a.unsafeUrl) && a.subtype === "Link")
+          .filter(a => a && (a.url || a.unsafeUrl) && a.subtype === "Link" && a.rect)
           .map(a => ({
             url: a.url || a.unsafeUrl,
-            rect: a.rect // [x1,y1,x2,y2] in PDF coords
+            rect: a.rect
           }));
 
-        // tekst groeperen per yKey
+        // tekst groeperen per y
         const rows = new Map();
         for (const it of (content.items || [])) {
           const str = (it.str || "").trim();
@@ -493,41 +506,66 @@
 
           const x = it.transform?.[4] ?? 0;
           const y = it.transform?.[5] ?? 0;
-          const yKey = Math.round(y); // afronden zodat woorden op 1 regel samen komen
+          const yKey = Math.round(y);
 
           if (!rows.has(yKey)) rows.set(yKey, []);
           rows.get(yKey).push({ x, y, str });
         }
 
-        // van boven naar beneden
         const yKeys = Array.from(rows.keys()).sort((a, b) => b - a);
 
         for (const yKey of yKeys) {
-          const parts = rows.get(yKey).sort((a, b) => a.x - b.x).map(o => o.str);
-          const line = normalizeName(parts.join(" "));
+          const items = rows.get(yKey).sort((a, b) => a.x - b.x);
 
-          if (!line) continue;
+          // Split segmenten op basis van x-gat (2 kolommen fix)
+          const segments = [];
+          let current = [];
+          let lastX = null;
+          const GAP = 60; // als nog samenvoeging: 50. Als te veel split: 70.
 
-          // URL zoeken die "op dezelfde regel" zit:
-          // PDF coords: yKey komt redelijk overeen met rect y (we pakken overlap)
-          let url = "";
-          for (const a of linkAnn) {
-            const y1 = Math.min(a.rect[1], a.rect[3]);
-            const y2 = Math.max(a.rect[1], a.rect[3]);
-            // beetje speling
-            if (yKey >= (y1 - 3) && yKey <= (y2 + 3)) {
-              url = a.url;
-              break;
+          for (const it of items) {
+            if (lastX !== null && (it.x - lastX) > GAP) {
+              if (current.length) segments.push(current);
+              current = [];
             }
+            current.push(it);
+            lastX = it.x;
           }
+          if (current.length) segments.push(current);
 
-          allRows.push({ line, url });
+          for (const seg of segments) {
+            const segLine = normalizeName(seg.map(o => o.str).join(" "));
+            if (!segLine) continue;
+
+            const segMinX = Math.min(...seg.map(o => o.x));
+            const segMaxX = Math.max(...seg.map(o => o.x));
+
+            // link zoeken die bij dit segment hoort (overlap in y én x)
+            let url = "";
+            for (const a of linkAnn) {
+              const x1 = Math.min(a.rect[0], a.rect[2]);
+              const x2 = Math.max(a.rect[0], a.rect[2]);
+              const y1 = Math.min(a.rect[1], a.rect[3]);
+              const y2 = Math.max(a.rect[1], a.rect[3]);
+
+              const yOverlap = (yKey >= (y1 - 3) && yKey <= (y2 + 3));
+              const xOverlap = !(segMaxX < (x1 - 10) || segMinX > (x2 + 10));
+
+              if (yOverlap && xOverlap) {
+                url = a.url;
+                break;
+              }
+            }
+
+            allRows.push({ line: segLine, url });
+          }
         }
       }
 
       return allRows;
     }
 
+    // Alleen bullets als beroep, met sector + niveau context
     function parseBeroepenFromRows(rows) {
       let currentSector = null;
       let currentLevel = null;
@@ -538,22 +576,23 @@
         const line = (r.line || "").trim();
         const lower = line.toLowerCase();
 
-        // sector exact herkennen
+        // sector exact
         if (SECTORS.has(line)) {
           currentSector = line;
           continue;
         }
 
-        // niveau herkennen
+        // niveau
         const lvl = isLevelLine(lower);
         if (lvl) {
           currentLevel = lvl;
           continue;
         }
 
-        // alleen bulletregels als beroep (dit voorkomt rommel)
+        // alleen bullets
         const isBullet = /^([▪•\-–])\s+/.test(line);
         if (!isBullet) continue;
+
         if (!currentSector || !currentLevel) continue;
 
         const name = cleanBulletName(line);
@@ -568,14 +607,14 @@
         });
       }
 
-      // dubbelen eruit (en als er 2 entries zijn, bewaar die met url)
+      // dubbelen eruit; behoud item met url als die er is
       const map = new Map();
       for (const b of out) {
         const k = `${b.s}||${b.n}`.toLowerCase();
         if (!map.has(k)) map.set(k, b);
         else {
-          const existing = map.get(k);
-          if (!existing.url && b.url) map.set(k, b);
+          const ex = map.get(k);
+          if (!ex.url && b.url) map.set(k, b);
         }
       }
 
@@ -593,6 +632,16 @@
       return unique;
     }
 
+    // ========= INSTELLINGEN KNOPPEN =========
+    const settingsMsg = document.getElementById("settingsMsg");
+    const pdfFileInput = document.getElementById("pdfFileInput");
+    const useDemoBtn = document.getElementById("useDemoBtn");
+    const clearNotesBtn = document.getElementById("clearNotesBtn");
+
+    function setSettingsMsg(msg, ok=true) {
+      settingsMsg.innerHTML = `<span class="${ok ? "text-emerald-700" : "text-rose-700"} font-semibold">${escapeHtml(msg)}</span>`;
+    }
+
     pdfFileInput.addEventListener("change", async () => {
       const file = pdfFileInput.files?.[0];
       if (!file) return;
@@ -605,7 +654,7 @@
         const parsed = parseBeroepenFromRows(rows);
 
         if (!parsed.length) {
-          setSettingsMsg("Ik kon geen beroepen vinden. Probeer een andere PDF-versie of stuur me een screenshot van 1 pagina.", false);
+          setSettingsMsg("Ik kon geen beroepen vinden. Probeer een andere PDF-versie.", false);
           return;
         }
 
@@ -614,7 +663,7 @@
         filterContent();
 
         const withLinks = parsed.filter(b => b.url).length;
-        setSettingsMsg(`Klaar! ${parsed.length} beroepen ingeladen. Linkjes uit PDF gevonden: ${withLinks}.`, true);
+        setSettingsMsg(`Klaar! ${parsed.length} beroepen ingeladen. Linkjes uit PDF: ${withLinks}.`, true);
         showPortal();
       } catch (e) {
         setSettingsMsg(`Mislukt: ${e.message}`, false);
