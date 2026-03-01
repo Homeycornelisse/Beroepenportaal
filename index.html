@@ -36,11 +36,18 @@
     @media print {
       .no-print { display: none !important; }
       body { background: white !important; margin: 0; padding: 0; }
-      #portalView, #settingsView { display: none !important; }
+      #portalView, #settingsView, #helpView, #begelView { display: none !important; }
       #exportView { display: block !important; }
+      #begelExportView { display: block !important; }
 
       .export-banner {
         background: linear-gradient(135deg, #003082 0%, #0055b3 100%) !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        color: white !important;
+      }
+      .begel-export-banner {
+        background: linear-gradient(135deg, #4c1d95 0%, #7c3aed 100%) !important;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
         color: white !important;
@@ -50,11 +57,12 @@
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
       }
-      .export-lvl-badge {
+      .export-lvl-badge, .lvl-basis, .lvl-mid, .lvl-hoger {
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
       }
       .export-card { border: 1px solid #e2e8f0 !important; break-inside: avoid; }
+      .star-filled { color: #f59e0b !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     }
 
     .export-banner {
@@ -90,6 +98,7 @@
         <button id="tabPortalBtn" onclick="showPortal()" class="px-3 py-1.5 rounded-lg text-sm font-semibold transition-all">Portaal</button>
         <button id="tabHelpBtn" onclick="showHelp()" class="px-3 py-1.5 rounded-lg text-sm font-semibold transition-all">Hoe werkt het?</button>
         <button id="tabSettingsBtn" onclick="showSettings()" class="px-3 py-1.5 rounded-lg text-sm font-semibold transition-all">Instellingen</button>
+        <button id="tabBegelBtn" onclick="showBegeleider()" class="px-3 py-1.5 rounded-lg text-sm font-semibold transition-all flex items-center gap-1.5">&#128100; Begeleider</button>
 
         <input type="text" id="searchInput" placeholder="Zoek beroep of sector…"
                class="p-2 border border-slate-200 rounded-lg text-sm w-56 focus:border-blue-400 focus:ring-1 focus:ring-blue-100 outline-none">
@@ -425,8 +434,143 @@
       </div>
     </section>
 
-    <!-- EXPORT VIEW (print only) -->
+    <!-- BEGELEIDER MODUS -->
+    <section id="begelView" class="hidden no-print">
+      <div class="max-w-4xl mx-auto">
+
+        <!-- Wachtwoord scherm -->
+        <div id="begelLockScreen">
+          <div class="max-w-sm mx-auto mt-16">
+            <div class="bg-white rounded-3xl shadow-lg border border-slate-200 overflow-hidden">
+              <div class="p-8 text-center" style="background: linear-gradient(135deg, #4c1d95 0%, #7c3aed 100%);">
+                <div class="text-5xl mb-3">🔒</div>
+                <h2 class="text-xl font-bold text-white mb-1">Begeleidersmodus</h2>
+                <p class="text-purple-200 text-sm">Alleen toegankelijk voor begeleiders</p>
+              </div>
+              <div class="p-6">
+                <label class="text-sm font-semibold text-slate-700 block mb-2">Wachtwoord</label>
+                <input id="begelPwInput" type="password" placeholder="Voer wachtwoord in"
+                       class="w-full p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 mb-1"
+                       onkeydown="if(event.key==='Enter') checkBegelPw()">
+                <div id="begelPwError" class="text-xs text-red-500 mb-3 hidden">Onjuist wachtwoord. Probeer opnieuw.</div>
+                <button onclick="checkBegelPw()"
+                  class="w-full py-3 rounded-xl text-sm font-bold text-white hover:opacity-90 transition"
+                  style="background:#7c3aed;">
+                  Inloggen
+                </button>
+                <div class="mt-4 text-xs text-slate-400 text-center">
+                  Standaard wachtwoord: <code class="bg-slate-100 px-1.5 py-0.5 rounded font-mono">begeleider</code><br>
+                  <button onclick="showChangePassword()" class="text-purple-500 hover:underline mt-1 inline-block">Wachtwoord wijzigen</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Wachtwoord wijzigen -->
+            <div id="changePwPanel" class="hidden mt-4 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+              <div class="text-sm font-semibold text-slate-700 mb-3">Wachtwoord wijzigen</div>
+              <input id="oldPwInput" type="password" placeholder="Huidig wachtwoord"
+                     class="w-full p-2.5 border border-slate-200 rounded-xl text-sm outline-none focus:border-purple-400 mb-2">
+              <input id="newPwInput" type="password" placeholder="Nieuw wachtwoord"
+                     class="w-full p-2.5 border border-slate-200 rounded-xl text-sm outline-none focus:border-purple-400 mb-2">
+              <input id="newPwInput2" type="password" placeholder="Herhaal nieuw wachtwoord"
+                     class="w-full p-2.5 border border-slate-200 rounded-xl text-sm outline-none focus:border-purple-400 mb-3">
+              <button onclick="doChangePassword()"
+                class="w-full py-2.5 rounded-xl text-sm font-bold text-white hover:opacity-90 transition"
+                style="background:#7c3aed;">
+                Opslaan
+              </button>
+              <div id="changePwMsg" class="mt-2 text-xs"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Begeleider werkruimte (verborgen tot ingelogd) -->
+        <div id="begelUnlocked" class="hidden">
+
+          <!-- Hero -->
+          <div class="rounded-3xl mb-6 p-7 text-white relative overflow-hidden" style="background: linear-gradient(135deg, #4c1d95 0%, #7c3aed 60%, #a855f7 100%);">
+            <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(circle at 30% 70%, white 1.5px, transparent 1.5px), radial-gradient(circle at 70% 30%, white 1.5px, transparent 1.5px); background-size: 32px 32px;"></div>
+            <div class="relative flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <div class="text-xs font-bold uppercase tracking-widest opacity-60 mb-1">Professionele module</div>
+                <h2 class="text-2xl font-bold mb-1">Begeleidersmodus</h2>
+                <p class="opacity-75 text-sm max-w-lg">Importeer het exportbestand van uw cliënt en voeg professionele aanvullingen toe per beroep.</p>
+              </div>
+              <button onclick="logoutBegel()" class="text-purple-200 hover:text-white text-xs font-semibold border border-purple-400 px-3 py-1.5 rounded-lg transition self-start">
+                🔒 Uitloggen
+              </button>
+            </div>
+          </div>
+
+          <!-- Import zone -->
+          <div id="begelImportZone">
+            <div id="begelDropZone"
+                 class="border-2 border-dashed border-purple-300 rounded-3xl p-12 text-center bg-purple-50 hover:bg-purple-100 transition cursor-pointer mb-4"
+                 onclick="document.getElementById('begelFileInput').click()"
+                 ondragover="event.preventDefault(); this.classList.add('bg-purple-100')"
+                 ondragleave="this.classList.remove('bg-purple-100')"
+                 ondrop="handleBegelDrop(event)">
+              <div class="text-4xl mb-3">📂</div>
+              <div class="font-bold text-purple-800 mb-1">Sleep hier het exportbestand van de cliënt</div>
+              <div class="text-sm text-purple-600 mb-4">of klik om een bestand te kiezen (.html exportbestand)</div>
+              <div class="inline-block px-4 py-2 rounded-xl text-sm font-bold text-white" style="background:#7c3aed;">Bestand kiezen</div>
+              <input id="begelFileInput" type="file" accept="text/html,.html" class="hidden" onchange="handleBegelFile(this.files[0])">
+            </div>
+            <div class="bg-white rounded-2xl border border-slate-200 p-5 text-sm text-slate-600 shadow-sm">
+              <div class="font-bold text-slate-700 mb-2">💡 Hoe werkt het?</div>
+              <ol class="space-y-1.5 list-decimal list-inside text-slate-600">
+                <li>Laat de cliënt via het Portaal zijn beroepen selecteren</li>
+                <li>De cliënt klikt op <strong>"⬇ Export mijn selectie"</strong> en slaat het <strong>.html bestand</strong> op</li>
+                <li>Upload dat .html bestand hier</li>
+                <li>Voeg uw professionele aantekeningen toe per beroep</li>
+                <li>Klik op <strong>"PDF exporteren voor dossier"</strong></li>
+              </ol>
+            </div>
+          </div>
+
+          <!-- Werkruimte na laden -->
+          <div id="begelWorkspace" class="hidden">
+
+            <!-- Info + actie balk -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 mb-5 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <div class="text-xs font-bold uppercase tracking-widest text-purple-500 mb-0.5">Geladen cliëntdata</div>
+                <div id="begelInfoBar" class="text-sm font-semibold text-slate-700"></div>
+              </div>
+              <div class="flex gap-2 flex-wrap">
+                <button onclick="exportBegelCombined()" class="px-4 py-2 rounded-xl text-sm font-bold text-white hover:opacity-90 transition shadow flex items-center gap-2" style="background:#7c3aed;">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                  PDF exporteren voor dossier
+                </button>
+                <button onclick="resetBegel()" class="px-3 py-2 rounded-xl text-sm font-semibold bg-white border border-slate-200 hover:bg-slate-50 transition text-slate-600">
+                  Ander bestand laden
+                </button>
+              </div>
+            </div>
+
+            <!-- Begeleider naam -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 mb-5">
+              <label class="text-sm font-semibold text-slate-700 block mb-2">Naam begeleider <span class="text-slate-400 font-normal">(verschijnt in PDF)</span></label>
+              <input id="begelNaamInput" type="text" placeholder="Bijv. Janine de Vries – Arbeidsdeskundige UWV"
+                     class="w-full p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-100"
+                     oninput="saveBegel()">
+            </div>
+
+            <!-- Beroepen kaarten -->
+            <div id="begelBeroepenContainer" class="space-y-4"></div>
+
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+
+    <!-- Client export (voor afdrukken) -->
     <section id="exportView" class="hidden">
+      <!-- Embedded machine-readable data voor begeleider-import -->
+      <script id="exportDataEmbed" type="application/json">null</script>
+
       <div class="export-banner">
         <div class="flex items-start justify-between flex-wrap gap-4">
           <div>
@@ -457,6 +601,38 @@
 
       <div class="mt-8 pt-4 border-t border-slate-200 text-xs text-slate-400">
         UWV Kansrijke Beroepen 2025–2026 · uwv.nl · Gegenereerd via Beroepen Portaal
+      </div>
+    </section>
+
+    <!-- Gecombineerde begeleider+client export (voor afdrukken) -->
+    <section id="begelExportView" class="hidden">
+      <div class="export-banner" style="background: linear-gradient(135deg, #4c1d95 0%, #7c3aed 100%);">
+        <div class="flex items-start justify-between flex-wrap gap-4">
+          <div>
+            <div class="text-xs font-bold uppercase tracking-widest opacity-70 mb-1">Kansrijke Beroepen Portaal 2025–2026 · Begeleidersdossier</div>
+            <h1 class="text-3xl font-bold mb-1">Gecombineerd beroepenoverzicht</h1>
+            <div id="begelExportSubtitle" class="text-sm opacity-80"></div>
+          </div>
+          <div class="text-right text-xs opacity-70">
+            <div id="begelExportBegeleider" class="font-bold text-white text-sm mb-0.5"></div>
+            <div id="begelExportMeta"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap gap-4 mt-5 mb-6 px-1">
+        <div class="flex items-center gap-2 text-xs text-slate-600">
+          <span class="w-3 h-3 rounded-full inline-block" style="background:#f97316"></span> Cliënt-notities
+        </div>
+        <div class="flex items-center gap-2 text-xs text-slate-600">
+          <span class="w-3 h-3 rounded-full inline-block" style="background:#7c3aed"></span> Begeleider-aantekeningen
+        </div>
+      </div>
+
+      <div id="begelExportList" class="space-y-6"></div>
+
+      <div class="mt-8 pt-4 border-t border-slate-200 text-xs text-slate-400">
+        UWV Kansrijke Beroepen 2025–2026 · Vertrouwelijk begeleidersdossier · Beroepen Portaal
       </div>
     </section>
 
@@ -878,26 +1054,32 @@
     document.getElementById('portalView').classList.remove('hidden');
     document.getElementById('settingsView').classList.add('hidden');
     document.getElementById('helpView').classList.add('hidden');
+    document.getElementById('begelView').classList.add('hidden');
     document.getElementById('tabPortalBtn').style.cssText   = 'background:var(--blue);color:white;';
     document.getElementById('tabSettingsBtn').style.cssText = 'background:white;color:#374151;border:1px solid #e5e7eb;';
     document.getElementById('tabHelpBtn').style.cssText     = 'background:white;color:#374151;border:1px solid #e5e7eb;';
+    document.getElementById('tabBegelBtn').style.cssText    = 'background:white;color:#374151;border:1px solid #e5e7eb;';
   }
   function showSettings() {
     document.getElementById('settingsView').classList.remove('hidden');
     document.getElementById('portalView').classList.add('hidden');
     document.getElementById('helpView').classList.add('hidden');
+    document.getElementById('begelView').classList.add('hidden');
     document.getElementById('tabSettingsBtn').style.cssText = 'background:var(--blue);color:white;';
     document.getElementById('tabPortalBtn').style.cssText   = 'background:white;color:#374151;border:1px solid #e5e7eb;';
     document.getElementById('tabHelpBtn').style.cssText     = 'background:white;color:#374151;border:1px solid #e5e7eb;';
+    document.getElementById('tabBegelBtn').style.cssText    = 'background:white;color:#374151;border:1px solid #e5e7eb;';
   }
 
   function showHelp() {
     document.getElementById('helpView').classList.remove('hidden');
     document.getElementById('portalView').classList.add('hidden');
     document.getElementById('settingsView').classList.add('hidden');
+    document.getElementById('begelView').classList.add('hidden');
     document.getElementById('tabHelpBtn').style.cssText     = 'background:var(--blue);color:white;';
     document.getElementById('tabPortalBtn').style.cssText   = 'background:white;color:#374151;border:1px solid #e5e7eb;';
     document.getElementById('tabSettingsBtn').style.cssText = 'background:white;color:#374151;border:1px solid #e5e7eb;';
+    document.getElementById('tabBegelBtn').style.cssText    = 'background:white;color:#374151;border:1px solid #e5e7eb;';
   }
 
   function toggleFaq(btn) {
@@ -955,7 +1137,7 @@
   }
 
   function werkNlSearchUrl(name) {
-    return `https://www.google.com/search?q=${encodeURIComponent(name)}`;
+    return `https://www.werk.nl/werkzoekenden/beroepen-en-opleidingen/beroepen/zoeken?zoekterm=${encodeURIComponent(name)}`;
   }
 
   function normalizeWerkUrl(url){
@@ -1354,20 +1536,57 @@
   }
 
   // =====================================================================
-  // EXPORT (print)
+  // EXPORT (print) - client versie
   // =====================================================================
   document.getElementById('exportBtn').addEventListener('click', () => {
     const orientEl = document.getElementById('printOrientation');
     const orient = orientEl ? orientEl.value : 'portrait';
     applyPrintOrientation(orient);
+    // Verberg begeleider export, toon client export
+    document.getElementById('exportView').classList.remove('hidden');
+    document.getElementById('begelExportView').classList.add('hidden');
     buildExport();
     window.print();
+    // Direct na print: embed JSON zodat begeleider het kan importeren
+    embedExportData();
   });
 
   function applyPrintOrientation(mode){
     const el = document.getElementById('printPageStyle');
     const size = (mode === 'landscape') ? 'A4 landscape' : 'A4 portrait';
     el.textContent = `@media print { @page { size: ${size}; margin: 12mm; } }`;
+  }
+
+  // Embed de JSON-data in het export-document zodat de begeleider het kan inladen
+  function embedExportData() {
+    const selected = beroepen
+      .map(b => ({ b, entry: getEntry(b) }))
+      .filter(x => x.entry.like);
+
+    const payload = {
+      version: 'bp2026-v1',
+      exportedAt: new Date().toISOString(),
+      beroepen: selected.map(({ b, entry }) => ({
+        s: b.s, n: b.n, lvl: b.lvl, url: b.url || '',
+        like: entry.like,
+        doelgroep: entry.doelgroep,
+        note: entry.note || ''
+      }))
+    };
+
+    const tag = document.getElementById('exportDataEmbed');
+    if (tag) tag.textContent = JSON.stringify(payload);
+  }
+
+  function lvlBadgeCls(lvl){
+    if ((lvl||'').includes('Hoger')) return 'lvl-hoger';
+    if ((lvl||'').includes('Basis')) return 'lvl-basis';
+    return 'lvl-mid';
+  }
+  function lvlLbl(lvl){
+    if ((lvl||'').includes('Hoger')) return 'HBO/WO';
+    if ((lvl||'').includes('Basis')) return 'BASIS';
+    return 'MBO';
   }
 
   function buildExport() {
@@ -1402,17 +1621,6 @@
 
     const lvlOrder = { Basis:0, Middelbaar:1, Hoger:2 };
 
-    function lvlBadgeCls(lvl){
-      if ((lvl||'').includes('Hoger')) return 'lvl-hoger';
-      if ((lvl||'').includes('Basis')) return 'lvl-basis';
-      return 'lvl-mid';
-    }
-    function lvlLbl(lvl){
-      if ((lvl||'').includes('Hoger')) return 'HBO/WO';
-      if ((lvl||'').includes('Basis')) return 'BASIS';
-      return 'MBO';
-    }
-
     for (const sector of Object.keys(groups).sort((a,b) => a.localeCompare(b,'nl'))) {
       const items = groups[sector].sort((a,b) =>
         (lvlOrder[a.b.lvl]||9) - (lvlOrder[b.b.lvl]||9) ||
@@ -1433,10 +1641,8 @@
       for (const { b, entry } of items) {
         const row = document.createElement('div');
         row.className = 'px-5 py-4';
-
         const note = (entry.note || '').trim();
         const doelgroepTxt = entry.doelgroep ? 'Ja' : 'Nee';
-
         row.innerHTML = `
           <div class="flex items-start justify-between gap-3 mb-1">
             <div class="font-semibold text-sm leading-snug" style="color:var(--blue)">${esc(b.n)}</div>
@@ -1452,9 +1658,448 @@
         `;
         body.appendChild(row);
       }
-
       block.appendChild(body);
       exportList.appendChild(block);
+    }
+  }
+
+  // =====================================================================
+  // BEGELEIDER MODUS — wachtwoord, import, aantekeningen, PDF export
+  // =====================================================================
+  const BEGEL_PW_KEY    = 'bp2026_begel_pw';
+  const BEGEL_STATE_KEY = 'bp2026_begel_v2';
+  const DEFAULT_PW      = 'begeleider';
+
+  let begelData    = null;
+  let begelState   = {};
+  let begelUnlockedFlag = false;
+
+  function getBegelPw() {
+    return localStorage.getItem(BEGEL_PW_KEY) || DEFAULT_PW;
+  }
+
+  function checkBegelPw() {
+    const input = document.getElementById('begelPwInput').value;
+    if (input === getBegelPw()) {
+      begelUnlockedFlag = true;
+      document.getElementById('begelLockScreen').classList.add('hidden');
+      document.getElementById('begelUnlocked').classList.remove('hidden');
+      document.getElementById('begelPwError').classList.add('hidden');
+      document.getElementById('begelPwInput').value = '';
+      loadBegelState();
+    } else {
+      document.getElementById('begelPwError').classList.remove('hidden');
+      document.getElementById('begelPwInput').value = '';
+      document.getElementById('begelPwInput').focus();
+    }
+  }
+
+  function logoutBegel() {
+    begelUnlockedFlag = false;
+    document.getElementById('begelUnlocked').classList.add('hidden');
+    document.getElementById('begelLockScreen').classList.remove('hidden');
+    document.getElementById('begelPwInput').value = '';
+  }
+
+  function showChangePassword() {
+    document.getElementById('changePwPanel').classList.toggle('hidden');
+  }
+
+  function doChangePassword() {
+    const old   = document.getElementById('oldPwInput').value;
+    const nw    = document.getElementById('newPwInput').value;
+    const nw2   = document.getElementById('newPwInput2').value;
+    const msgEl = document.getElementById('changePwMsg');
+
+    if (old !== getBegelPw()) {
+      msgEl.textContent = '❌ Huidig wachtwoord klopt niet.';
+      msgEl.className = 'mt-2 text-xs text-red-500';
+      return;
+    }
+    if (!nw || nw.length < 4) {
+      msgEl.textContent = '❌ Nieuw wachtwoord moet minimaal 4 tekens zijn.';
+      msgEl.className = 'mt-2 text-xs text-red-500';
+      return;
+    }
+    if (nw !== nw2) {
+      msgEl.textContent = '❌ Wachtwoorden komen niet overeen.';
+      msgEl.className = 'mt-2 text-xs text-red-500';
+      return;
+    }
+    localStorage.setItem(BEGEL_PW_KEY, nw);
+    msgEl.textContent = '✅ Wachtwoord opgeslagen!';
+    msgEl.className = 'mt-2 text-xs text-emerald-600';
+    document.getElementById('oldPwInput').value = '';
+    document.getElementById('newPwInput').value = '';
+    document.getElementById('newPwInput2').value = '';
+  }
+
+  function getBegelEntry(key) {
+    if (!begelState[key]) begelState[key] = { sterren: 0, advies: '', stappen: '', lks: '', doelgroepFunctie: false };
+    return begelState[key];
+  }
+
+  function saveBegel() {
+    localStorage.setItem(BEGEL_STATE_KEY, JSON.stringify({
+      naam: document.getElementById('begelNaamInput').value,
+      state: begelState
+    }));
+  }
+
+  function loadBegelState() {
+    try {
+      const r = JSON.parse(localStorage.getItem(BEGEL_STATE_KEY));
+      if (r) {
+        begelState = r.state || {};
+        if (r.naam) document.getElementById('begelNaamInput').value = r.naam;
+      }
+    } catch {}
+  }
+
+  function showBegeleider() {
+    ['portalView','settingsView','helpView'].forEach(id =>
+      document.getElementById(id).classList.add('hidden')
+    );
+    document.getElementById('begelView').classList.remove('hidden');
+    ['tabPortalBtn','tabHelpBtn','tabSettingsBtn'].forEach(id => {
+      document.getElementById(id).style.cssText = 'background:white;color:#374151;border:1px solid #e5e7eb;';
+    });
+    document.getElementById('tabBegelBtn').style.cssText = 'background:#7c3aed;color:white;';
+    // Als al ingelogd in deze sessie, toon werkruimte direct
+    if (begelUnlockedFlag) {
+      document.getElementById('begelLockScreen').classList.add('hidden');
+      document.getElementById('begelUnlocked').classList.remove('hidden');
+    }
+  }
+
+  function handleBegelDrop(event) {
+    event.preventDefault();
+    document.getElementById('begelDropZone').classList.remove('bg-purple-100');
+    const file = event.dataTransfer.files[0];
+    if (file) handleBegelFile(file);
+  }
+
+  function handleBegelFile(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const html = e.target.result;
+        const match = html.match(/<script[^>]+id="exportDataEmbed"[^>]*>([\s\S]*?)<\/script>/);
+        if (!match || !match[1].trim() || match[1].trim() === 'null') {
+          alert('Dit bestand bevat geen importeerbare cliëntdata.\n\nZorg dat de cliënt zijn selectie exporteert via "⬇ Export mijn selectie" en het .html bestand opslaat (niet als PDF printen).');
+          return;
+        }
+        const payload = JSON.parse(match[1]);
+        if (!payload?.beroepen?.length) {
+          alert('Geen beroepen gevonden in dit exportbestand.');
+          return;
+        }
+        begelData = payload;
+        loadBegelState();
+        renderBegelWorkspace();
+      } catch(err) {
+        alert('Fout bij het lezen van het bestand: ' + err.message);
+      }
+    };
+    reader.readAsText(file, 'utf-8');
+  }
+
+  function resetBegel() {
+    begelData = null;
+    document.getElementById('begelImportZone').classList.remove('hidden');
+    document.getElementById('begelWorkspace').classList.add('hidden');
+    document.getElementById('begelFileInput').value = '';
+  }
+
+  function begelSterLabel(n) {
+    return ['—','Slecht passend','Matig passend','Redelijk passend','Goed passend','Uitstekend passend'][n] || '—';
+  }
+
+  function renderBegelWorkspace() {
+    document.getElementById('begelImportZone').classList.add('hidden');
+    document.getElementById('begelWorkspace').classList.remove('hidden');
+
+    const count = begelData.beroepen.length;
+    const exportedAt = begelData.exportedAt
+      ? new Date(begelData.exportedAt).toLocaleString('nl-NL') : 'onbekend';
+    document.getElementById('begelInfoBar').textContent =
+      `${count} beroep${count !== 1 ? 'en' : ''} · Cliëntexport van ${exportedAt}`;
+
+    const container = document.getElementById('begelBeroepenContainer');
+    container.innerHTML = '';
+
+    const groups = {};
+    for (const b of begelData.beroepen) {
+      if (!groups[b.s]) groups[b.s] = [];
+      groups[b.s].push(b);
+    }
+
+    for (const sector of Object.keys(groups).sort((a,b) => a.localeCompare(b,'nl'))) {
+      const sh = document.createElement('div');
+      sh.className = 'text-xs font-bold uppercase tracking-widest text-purple-600 px-1 pt-3 pb-1';
+      sh.textContent = sector;
+      container.appendChild(sh);
+
+      for (const b of groups[sector]) {
+        const key   = `${b.s}||${b.n}`.toLowerCase();
+        const entry = getBegelEntry(key);
+
+        const card = document.createElement('div');
+        card.className = 'bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden';
+        card.innerHTML = `
+          <!-- Cliënt info -->
+          <div class="bg-slate-50 border-b border-slate-100 px-5 py-4">
+            <div class="flex items-start justify-between gap-2 mb-2">
+              <div class="font-bold text-sm leading-snug" style="color:var(--blue)">${esc(b.n)}</div>
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold flex-shrink-0 ${lvlBadgeCls(b.lvl)}">${lvlLbl(b.lvl)}</span>
+            </div>
+            <div class="flex flex-wrap gap-3 text-xs text-slate-500 mb-2">
+              <span>Cliënt doelgroep-vinkje: <strong class="${b.doelgroep ? 'text-blue-700' : 'text-slate-500'}">${b.doelgroep ? '✓ Ja' : 'Nee'}</strong></span>
+            </div>
+            ${b.note
+              ? `<div class="text-xs text-slate-700 bg-orange-50 border border-orange-100 rounded-xl p-3 leading-relaxed">
+                  <span class="text-orange-500 font-bold text-[10px] uppercase block mb-0.5">Cliënt-notitie</span>
+                  ${esc(b.note)}
+                </div>`
+              : `<div class="text-xs text-slate-400 italic">Geen cliënt-notitie</div>`}
+          </div>
+
+          <!-- Begeleider velden -->
+          <div class="px-5 py-5 space-y-4">
+            <div class="text-xs font-bold uppercase tracking-widest text-purple-500">Begeleider-aantekeningen</div>
+
+            <!-- Doelgroep functie (door begeleider) -->
+            <div class="flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer select-none transition ${entry.doelgroepFunctie ? 'border-blue-400 bg-blue-50' : 'border-slate-200 bg-slate-50'}"
+                 id="doelgroepCard-${esc(key)}"
+                 onclick="toggleDoelgroepFunctie('${esc(key)}')">
+              <div class="w-5 h-5 rounded flex-shrink-0 mt-0.5 flex items-center justify-center border-2 transition ${entry.doelgroepFunctie ? 'border-blue-500 bg-blue-500' : 'border-slate-300 bg-white'}"
+                   id="doelgroepCheck-${esc(key)}">
+                ${entry.doelgroepFunctie ? '<svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>' : ''}
+              </div>
+              <div>
+                <div class="text-sm font-bold ${entry.doelgroepFunctie ? 'text-blue-800' : 'text-slate-700'}">Doelgroepfunctie (begeleider)</div>
+                <div class="text-xs ${entry.doelgroepFunctie ? 'text-blue-600' : 'text-slate-400'} mt-0.5">
+                  ${entry.doelgroepFunctie ? '✓ Dit beroep is aangemerkt als doelgroepfunctie' : 'Klik om te markeren als doelgroepfunctie'}
+                </div>
+              </div>
+            </div>
+
+            <!-- Sterren -->
+            <div>
+              <div class="text-xs font-semibold text-slate-600 mb-2">Passendheid</div>
+              <div class="flex items-center gap-1 star-group" data-key="${esc(key)}">
+                ${[1,2,3,4,5].map(i => `
+                  <button type="button" onclick="setSterren('${esc(key)}', ${i})"
+                    class="text-3xl leading-none hover:scale-110 transition-transform focus:outline-none"
+                    data-star="${i}"
+                    style="color:${entry.sterren >= i ? '#f59e0b' : '#e2e8f0'};">★</button>
+                `).join('')}
+                <span class="ml-2 text-xs font-medium text-slate-500 star-label-${esc(key)}">${begelSterLabel(entry.sterren)}</span>
+              </div>
+            </div>
+
+            <!-- LKS -->
+            <div>
+              <label class="text-xs font-semibold text-slate-600 block mb-1.5">Loonkostensubsidie (LKS %)</label>
+              <div class="flex items-center gap-3">
+                <input type="number" min="0" max="100"
+                  data-key="${esc(key)}" data-field="lks"
+                  oninput="updateBegelField(this)"
+                  value="${esc(bEntry_lks_safe(entry.lks))}"
+                  placeholder="bijv. 40"
+                  class="w-24 p-2.5 border border-purple-100 bg-purple-50 rounded-xl text-sm font-bold text-center outline-none focus:border-purple-400">
+                <span class="text-sm text-slate-400">% van wettelijk minimumloon</span>
+              </div>
+            </div>
+
+            <!-- Advies -->
+            <div>
+              <label class="text-xs font-semibold text-slate-600 block mb-1.5">Professioneel advies / beoordeling</label>
+              <textarea data-key="${esc(key)}" data-field="advies" oninput="updateBegelField(this)"
+                placeholder="Bijv: Goed passend bij fysieke capaciteiten. Opleiding via ROC Mondriaan is haalbaar binnen 12 maanden."
+                class="w-full bg-purple-50 border border-purple-100 rounded-xl p-3 text-xs text-slate-700 leading-relaxed focus:outline-none focus:border-purple-400"
+                style="min-height:68px;resize:none;">${esc(entry.advies)}</textarea>
+            </div>
+
+            <!-- Vervolgstappen -->
+            <div>
+              <label class="text-xs font-semibold text-slate-600 block mb-1.5">Concrete vervolgstappen</label>
+              <textarea data-key="${esc(key)}" data-field="stappen" oninput="updateBegelField(this)"
+                placeholder="Bijv:&#10;1. Oriëntatiegesprek met werkgever X (week 3)&#10;2. Open dag ROC – 15 april&#10;3. Terugkoppeling volgende sessie"
+                class="w-full bg-purple-50 border border-purple-100 rounded-xl p-3 text-xs text-slate-700 leading-relaxed focus:outline-none focus:border-purple-400"
+                style="min-height:80px;resize:none;">${esc(entry.stappen)}</textarea>
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+      }
+    }
+  }
+
+  // Hulpfunctie om lege lks waarde veilig te tonen
+  function bEntry_lks_safe(v) { return (v === null || v === undefined) ? '' : v; }
+
+  function toggleDoelgroepFunctie(key) {
+    const entry = getBegelEntry(key);
+    entry.doelgroepFunctie = !entry.doelgroepFunctie;
+    saveBegel();
+
+    const card  = document.getElementById(`doelgroepCard-${key}`);
+    const check = document.getElementById(`doelgroepCheck-${key}`);
+    if (!card || !check) return;
+
+    if (entry.doelgroepFunctie) {
+      card.className  = card.className.replace('border-slate-200 bg-slate-50','border-blue-400 bg-blue-50');
+      check.className = check.className.replace('border-slate-300 bg-white','border-blue-500 bg-blue-500');
+      check.innerHTML = '<svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>';
+      card.querySelector('.text-sm').className = 'text-sm font-bold text-blue-800';
+      card.querySelector('.text-xs').className = 'text-xs text-blue-600 mt-0.5';
+      card.querySelector('.text-xs').textContent = '✓ Dit beroep is aangemerkt als doelgroepfunctie';
+    } else {
+      card.className  = card.className.replace('border-blue-400 bg-blue-50','border-slate-200 bg-slate-50');
+      check.className = check.className.replace('border-blue-500 bg-blue-500','border-slate-300 bg-white');
+      check.innerHTML = '';
+      card.querySelector('.text-sm').className = 'text-sm font-bold text-slate-700';
+      card.querySelector('.text-xs').className = 'text-xs text-slate-400 mt-0.5';
+      card.querySelector('.text-xs').textContent = 'Klik om te markeren als doelgroepfunctie';
+    }
+  }
+
+  function setSterren(key, n) {
+    const entry = getBegelEntry(key);
+    entry.sterren = (entry.sterren === n) ? 0 : n;
+    saveBegel();
+    const group = document.querySelector(`.star-group[data-key="${key}"]`);
+    if (group) {
+      group.querySelectorAll('[data-star]').forEach(btn => {
+        btn.style.color = entry.sterren >= parseInt(btn.dataset.star) ? '#f59e0b' : '#e2e8f0';
+      });
+      const lbl = document.querySelector(`.star-label-${key}`);
+      if (lbl) lbl.textContent = begelSterLabel(entry.sterren);
+    }
+  }
+
+  function updateBegelField(el) {
+    const key   = el.dataset.key;
+    const field = el.dataset.field;
+    const entry = getBegelEntry(key);
+    entry[field] = el.value;
+    saveBegel();
+  }
+
+  // =====================================================================
+  // PDF EXPORT — begeleider dossier
+  // =====================================================================
+  function exportBegelCombined() {
+    if (!begelData) return;
+    applyPrintOrientation('portrait');
+
+    document.getElementById('exportView').classList.add('hidden');
+    document.getElementById('begelExportView').classList.remove('hidden');
+    buildBegelExport();
+
+    window.print();
+
+    setTimeout(() => {
+      document.getElementById('begelExportView').classList.add('hidden');
+    }, 500);
+  }
+
+  function buildBegelExport() {
+    const begelNaam = document.getElementById('begelNaamInput').value.trim() || 'Begeleider';
+    const now = new Date();
+
+    document.getElementById('begelExportBegeleider').textContent = begelNaam;
+    document.getElementById('begelExportMeta').textContent = `Aangemaakt: ${now.toLocaleString('nl-NL')}`;
+    document.getElementById('begelExportSubtitle').textContent =
+      `${begelData.beroepen.length} beroepen · Cliëntexport: ${new Date(begelData.exportedAt).toLocaleDateString('nl-NL')}`;
+
+    const list = document.getElementById('begelExportList');
+    list.innerHTML = '';
+
+    const groups = {};
+    for (const b of begelData.beroepen) {
+      if (!groups[b.s]) groups[b.s] = [];
+      groups[b.s].push(b);
+    }
+    const lvlOrder = { Basis:0, Middelbaar:1, Hoger:2 };
+
+    for (const sector of Object.keys(groups).sort((a,z) => a.localeCompare(z,'nl'))) {
+      const items = groups[sector].sort((a,b) =>
+        (lvlOrder[a.lvl]||9)-(lvlOrder[b.lvl]||9) ||
+        (a.n||'').localeCompare((b.n||''),'nl')
+      );
+
+      const block = document.createElement('div');
+      block.className = 'export-card rounded-2xl overflow-hidden mb-5';
+      block.innerHTML = `<div class="export-sector-header px-5 py-3 border-b border-slate-200">
+        <div class="font-bold text-sm uppercase tracking-wider" style="color:var(--blue)">${esc(sector)}</div>
+      </div>`;
+
+      const body = document.createElement('div');
+      body.className = 'divide-y divide-slate-100';
+
+      for (const b of items) {
+        const key   = `${b.s}||${b.n}`.toLowerCase();
+        const begel = getBegelEntry(key);
+
+        const sterHtml = begel.sterren
+          ? `<span style="color:#f59e0b;letter-spacing:-1px;">${'★'.repeat(begel.sterren)}${'☆'.repeat(5-begel.sterren)}</span>
+             <span style="color:#6b7280;font-size:10px;margin-left:4px;">${begelSterLabel(begel.sterren)}</span>`
+          : '';
+
+        const row = document.createElement('div');
+        row.className = 'px-5 py-5';
+        row.innerHTML = `
+          <!-- Koptekst -->
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px;">
+            <div style="font-weight:700;font-size:14px;color:#003082;line-height:1.3;">${esc(b.n)}</div>
+            <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+              ${sterHtml}
+              <span class="px-2 py-0.5 rounded text-xs font-bold export-lvl-badge ${lvlBadgeCls(b.lvl)}">${lvlLbl(b.lvl)}</span>
+            </div>
+          </div>
+
+          <!-- Status badges -->
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
+            ${b.doelgroep ? `<span style="background:#dbeafe;color:#1e40af;font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;">CLIËNT: DOELGROEP-VINKJE ✓</span>` : ''}
+            ${begel.doelgroepFunctie ? `<span style="background:#7c3aed;color:white;font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;">DOELGROEPFUNCTIE (BEGELEIDER) ✓</span>` : ''}
+            ${begel.lks ? `<span style="background:#f0fdf4;color:#166534;font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;">LKS: ${begel.lks}%</span>` : ''}
+          </div>
+
+          <!-- 2-koloms grid: cliënt + begeleider -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:${(begel.advies || begel.stappen) ? '10' : '0'}px;">
+            <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:10px;">
+              <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#c2410c;margin-bottom:4px;">Cliënt-notitie</div>
+              <div style="font-size:11px;color:#374151;line-height:1.5;">${b.note ? esc(b.note) : '<em style="color:#9ca3af;">Geen notitie</em>'}</div>
+            </div>
+            <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px;">
+              <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#1d4ed8;margin-bottom:4px;">Doelgroep &amp; LKS</div>
+              <div style="font-size:11px;color:#374151;line-height:1.6;">
+                Cliënt-vinkje: <strong>${b.doelgroep ? 'Ja' : 'Nee'}</strong><br>
+                Doelgroepfunctie: <strong>${begel.doelgroepFunctie ? 'Ja' : 'Nee'}</strong><br>
+                LKS: <strong>${begel.lks ? begel.lks + '%' : '—'}</strong>
+              </div>
+            </div>
+          </div>
+
+          ${begel.advies ? `
+          <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:10px;padding:10px;margin-bottom:8px;">
+            <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#6d28d9;margin-bottom:4px;">Begeleider-advies</div>
+            <div style="font-size:11px;color:#374151;line-height:1.5;">${esc(begel.advies)}</div>
+          </div>` : ''}
+
+          ${begel.stappen ? `
+          <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:10px;">
+            <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#166534;margin-bottom:4px;">Vervolgstappen</div>
+            <div style="font-size:11px;color:#374151;line-height:1.6;white-space:pre-line;">${esc(begel.stappen)}</div>
+          </div>` : ''}
+        `;
+        body.appendChild(row);
+      }
+      block.appendChild(body);
+      list.appendChild(block);
     }
   }
 
@@ -1463,7 +2108,8 @@
   // =====================================================================
   function init() {
     showPortal();
-    document.getElementById('tabHelpBtn').style.cssText = 'background:white;color:#374151;border:1px solid #e5e7eb;';
+    document.getElementById('tabHelpBtn').style.cssText  = 'background:white;color:#374151;border:1px solid #e5e7eb;';
+    document.getElementById('tabBegelBtn').style.cssText = 'background:white;color:#374151;border:1px solid #e5e7eb;';
     updateBadge();
     refreshSectorDropdown();
     filterContent();
