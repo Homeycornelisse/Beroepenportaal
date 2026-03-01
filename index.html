@@ -88,6 +88,7 @@
 
       <div class="flex flex-wrap gap-2 items-center">
         <button id="tabPortalBtn" onclick="showPortal()" class="px-3 py-1.5 rounded-lg text-sm font-semibold transition-all">Portaal</button>
+        <button id="tabHelpBtn" onclick="showHelp()" class="px-3 py-1.5 rounded-lg text-sm font-semibold transition-all">Hoe werkt het?</button>
         <button id="tabSettingsBtn" onclick="showSettings()" class="px-3 py-1.5 rounded-lg text-sm font-semibold transition-all">Instellingen</button>
 
         <input type="text" id="searchInput" placeholder="Zoek beroep of sector…"
@@ -196,6 +197,231 @@
         </div>
 
         <div id="settingsMsg" class="mt-4 text-sm"></div>
+      </div>
+    </section>
+
+    <!-- UITLEG / HOE WERKT HET -->
+    <section id="helpView" class="hidden no-print">
+      <div class="max-w-3xl mx-auto">
+
+        <!-- Hero -->
+        <div class="rounded-3xl mb-8 p-8 text-white relative overflow-hidden" style="background: linear-gradient(135deg, #003082 0%, #0055b3 60%, #1a73d4 100%);">
+          <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(circle at 20% 80%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px), radial-gradient(circle at 50% 50%, white 1px, transparent 1px); background-size: 40px 40px;"></div>
+          <div class="relative">
+            <div class="text-xs font-bold uppercase tracking-widest opacity-60 mb-2">Handleiding</div>
+            <h2 class="text-3xl font-bold mb-2 leading-tight">Hoe werkt het Kansrijke Beroepen Portaal?</h2>
+            <p class="opacity-80 text-sm leading-relaxed max-w-xl">
+              Met dit portaal verken je welke beroepen goed bij je passen. Volg de stappen hieronder om het meeste uit het portaal te halen.
+            </p>
+          </div>
+        </div>
+
+        <!-- Stappen -->
+        <div class="space-y-4 mb-8">
+
+          <!-- Stap 1 -->
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+            <div class="flex items-start gap-5 p-6">
+              <div class="flex-shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center text-white font-bold text-lg" style="background: var(--blue);">1</div>
+              <div class="flex-1">
+                <h3 class="font-bold text-base mb-1" style="color:var(--blue)">Upload de UWV PDF</h3>
+                <p class="text-sm text-slate-600 leading-relaxed mb-3">
+                  Download eerst de officiële PDF met kansrijke beroepen van de UWV-website. Upload deze daarna via <strong>Instellingen → Eigen PDF uploaden</strong>. De portaal leest automatisch alle beroepen in inclusief de bijbehorende links naar Werk.nl.
+                </p>
+                <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800">
+                  <strong>Tip:</strong> Zonder PDF werkt het portaal ook — er zijn dan 248 beroepen al ingeladen, maar de "Meer info" links zijn zoeklinks in plaats van directe pagina's.
+                </div>
+              </div>
+            </div>
+            <div class="border-t border-slate-100 px-6 py-3 bg-slate-50 flex items-center gap-3">
+              <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+              <span class="text-xs text-slate-500">Ga naar <button onclick="showSettings()" class="font-semibold hover:underline" style="color:var(--mid)">Instellingen</button> om de PDF te uploaden</span>
+            </div>
+          </div>
+
+          <!-- Stap 2 -->
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+            <div class="flex items-start gap-5 p-6">
+              <div class="flex-shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center text-white font-bold text-lg" style="background: var(--mid);">2</div>
+              <div class="flex-1">
+                <h3 class="font-bold text-base mb-1" style="color:var(--blue)">Blader door de beroepen</h3>
+                <p class="text-sm text-slate-600 leading-relaxed mb-3">
+                  In het <strong>Portaal</strong> zie je alle kansrijke beroepen als kaarten. Je kunt filteren op sector, opleidingsniveau en op wat je al hebt aangevinkt. Gebruik de zoekbalk bovenaan om snel een specifiek beroep te vinden.
+                </p>
+                <div class="grid grid-cols-3 gap-2 text-xs">
+                  <div class="bg-slate-50 rounded-xl p-3 text-center border border-slate-100">
+                    <div class="text-lg mb-1">🏗️</div>
+                    <div class="font-semibold text-slate-700">Sector</div>
+                    <div class="text-slate-400 mt-0.5">Bijv. Bouw, ICT, Zorg</div>
+                  </div>
+                  <div class="bg-slate-50 rounded-xl p-3 text-center border border-slate-100">
+                    <div class="text-lg mb-1">🎓</div>
+                    <div class="font-semibold text-slate-700">Niveau</div>
+                    <div class="text-slate-400 mt-0.5">Basis, MBO, HBO/WO</div>
+                  </div>
+                  <div class="bg-slate-50 rounded-xl p-3 text-center border border-slate-100">
+                    <div class="text-lg mb-1">🔍</div>
+                    <div class="font-semibold text-slate-700">Zoeken</div>
+                    <div class="text-slate-400 mt-0.5">Op naam of sector</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Stap 3 -->
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+            <div class="flex items-start gap-5 p-6">
+              <div class="flex-shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center text-white font-bold text-lg" style="background: var(--orange);">3</div>
+              <div class="flex-1">
+                <h3 class="font-bold text-base mb-1" style="color:var(--blue)">Vink beroepen aan die je aanspreken</h3>
+                <p class="text-sm text-slate-600 leading-relaxed mb-4">
+                  Zie je een beroep dat interessant klinkt? Zet een vinkje bij <strong>"Vind ik leuk"</strong>. Zo bouw je een persoonlijke lijst op. Via het filter "Alleen aangevinkt" zie je direct jouw selectie.
+                </p>
+                <!-- Voorbeeld kaart -->
+                <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50 text-xs">
+                  <div class="flex justify-between items-start mb-2">
+                    <span class="font-bold uppercase tracking-widest text-slate-400 text-[10px]">VOORBEELD SECTOR</span>
+                    <span class="px-2 py-0.5 rounded text-[10px] font-bold lvl-mid">MBO</span>
+                  </div>
+                  <div class="font-bold text-sm mb-2" style="color:var(--blue)">Voorbeeldberoep</div>
+                  <label class="flex items-center gap-2 mb-2 cursor-pointer">
+                    <input type="checkbox" checked class="w-3.5 h-3.5 rounded" style="accent-color:var(--orange);" onclick="return false;">
+                    <span class="font-semibold text-slate-700">Vind ik leuk</span>
+                    <span class="ml-1 text-[10px] text-orange-500 font-bold">← dit aanvinken!</span>
+                  </label>
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" class="w-3.5 h-3.5 rounded" style="accent-color:var(--mid);" onclick="return false;">
+                    <span class="text-slate-500">Doelgroep-registratie</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Stap 4 -->
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+            <div class="flex items-start gap-5 p-6">
+              <div class="flex-shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center text-white font-bold text-lg" style="background: #166534;">4</div>
+              <div class="flex-1">
+                <h3 class="font-bold text-base mb-1" style="color:var(--blue)">Schrijf een persoonlijke notitie</h3>
+                <p class="text-sm text-slate-600 leading-relaxed mb-3">
+                  Elke beroepskaart heeft een tekstvak voor notities. Schrijf op wat je aanspreekt aan dit beroep, of juist wat je twijfels zijn. Dit helpt je later bij het maken van een keuze en verschijnt ook in je exportoverzicht.
+                </p>
+                <div class="bg-white border border-slate-200 rounded-xl p-3 text-xs text-slate-500 italic">
+                  "Wat trekt me aan? Wat houdt me tegen?"<br>
+                  <span class="text-slate-400 mt-1 block not-italic">→ Bijv: "Werken buiten spreekt me aan, maar ik weet niet zeker of ik de opleiding kan volgen."</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Stap 5 -->
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+            <div class="flex items-start gap-5 p-6">
+              <div class="flex-shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center text-white font-bold text-lg" style="background: #1e40af;">5</div>
+              <div class="flex-1">
+                <h3 class="font-bold text-base mb-1" style="color:var(--blue)">Doelgroepregistratie aanvinken</h3>
+                <p class="text-sm text-slate-600 leading-relaxed mb-3">
+                  Weet je dat een beroep valt onder de <strong>doelgroepregistratie</strong>? Zet dan het bijbehorende vinkje aan. Dit betekent dat werkgevers een loonkostensubsidie kunnen aanvragen als ze iemand met een arbeidsbeperking in dienst nemen. Het vinkje helpt jou en je begeleider om dit bij te houden in het exportoverzicht.
+                </p>
+                <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-800">
+                  <strong>Wat is doelgroepregistratie?</strong> Mensen in het doelgroepregister Banenafspraak kunnen bij bepaalde werkgevers met loonkostensubsidie aan het werk. Vraag je arbeidsdeskundige of begeleider of dit voor jou geldt.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Stap 6 -->
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+            <div class="flex items-start gap-5 p-6">
+              <div class="flex-shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center text-white font-bold text-lg" style="background: #7c3aed;">6</div>
+              <div class="flex-1">
+                <h3 class="font-bold text-base mb-1" style="color:var(--blue)">Exporteer jouw overzicht</h3>
+                <p class="text-sm text-slate-600 leading-relaxed mb-3">
+                  Als je een selectie hebt gemaakt, klik dan op <strong>"⬇ Export mijn selectie"</strong> rechtsboven. Er wordt een overzichtspagina gegenereerd met al jouw aangevinkte beroepen, je notities en de doelgroep-vinkjes. Die kun je afdrukken of opslaan als PDF om te bespreken met je begeleider.
+                </p>
+                <div class="flex items-center gap-2 bg-slate-50 rounded-xl p-3 border border-slate-200">
+                  <div class="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold" style="background:var(--orange);">⬇</div>
+                  <div>
+                    <div class="text-xs font-bold text-slate-700">Export mijn selectie</div>
+                    <div class="text-[11px] text-slate-400">Rechtsboven in de navigatiebalk</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Veelgestelde vragen -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-8">
+          <h3 class="font-bold text-base mb-4" style="color:var(--blue)">Veelgestelde vragen</h3>
+          <div class="space-y-4" id="faqList">
+
+            <div class="faq-item border-b border-slate-100 pb-4">
+              <button onclick="toggleFaq(this)" class="w-full flex items-center justify-between text-left gap-3 group">
+                <span class="text-sm font-semibold text-slate-700 group-hover:text-blue-700 transition-colors">Worden mijn keuzes opgeslagen?</span>
+                <svg class="faq-icon w-4 h-4 text-slate-400 flex-shrink-0 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+              </button>
+              <div class="faq-answer hidden mt-2 text-sm text-slate-600 leading-relaxed">
+                Ja. Jouw vinkjes, doelgroep-aankruisingen en notities worden automatisch opgeslagen in de browser (localStorage). Ze blijven bewaard zolang je dezelfde browser op hetzelfde apparaat gebruikt. Je hoeft niets handmatig te bewaren.
+              </div>
+            </div>
+
+            <div class="faq-item border-b border-slate-100 pb-4">
+              <button onclick="toggleFaq(this)" class="w-full flex items-center justify-between text-left gap-3 group">
+                <span class="text-sm font-semibold text-slate-700 group-hover:text-blue-700 transition-colors">Wat als ik geen PDF heb?</span>
+                <svg class="faq-icon w-4 h-4 text-slate-400 flex-shrink-0 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+              </button>
+              <div class="faq-answer hidden mt-2 text-sm text-slate-600 leading-relaxed">
+                Geen probleem. Het portaal heeft de volledige lijst van 248 kansrijke beroepen al ingebouwd. Je kunt direct beginnen met verkennen. De "Meer info" links gaan dan naar een zoekpagina op Werk.nl in plaats van de directe beroepspagina.
+              </div>
+            </div>
+
+            <div class="faq-item border-b border-slate-100 pb-4">
+              <button onclick="toggleFaq(this)" class="w-full flex items-center justify-between text-left gap-3 group">
+                <span class="text-sm font-semibold text-slate-700 group-hover:text-blue-700 transition-colors">Wat betekenen de kleuren van de badges (BASIS / MBO / HBO/WO)?</span>
+                <svg class="faq-icon w-4 h-4 text-slate-400 flex-shrink-0 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+              </button>
+              <div class="faq-answer hidden mt-2 text-sm text-slate-600 leading-relaxed">
+                De badge geeft het opleidingsniveau aan dat gangbaar is voor dat beroep. <span class="px-1.5 py-0.5 rounded text-[11px] font-bold lvl-basis">BASIS</span> staat voor basisvakmanschap, <span class="px-1.5 py-0.5 rounded text-[11px] font-bold lvl-mid">MBO</span> voor middelbaar beroepsniveau, en <span class="px-1.5 py-0.5 rounded text-[11px] font-bold lvl-hoger">HBO/WO</span> voor hoger of wetenschappelijk onderwijs.
+              </div>
+            </div>
+
+            <div class="faq-item border-b border-slate-100 pb-4">
+              <button onclick="toggleFaq(this)" class="w-full flex items-center justify-between text-left gap-3 group">
+                <span class="text-sm font-semibold text-slate-700 group-hover:text-blue-700 transition-colors">Hoe wis ik mijn notities en selecties?</span>
+                <svg class="faq-icon w-4 h-4 text-slate-400 flex-shrink-0 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+              </button>
+              <div class="faq-answer hidden mt-2 text-sm text-slate-600 leading-relaxed">
+                Ga naar <button onclick="showSettings()" class="font-semibold hover:underline" style="color:var(--mid)">Instellingen</button> en klik op "Mijn notities wissen". Hiermee worden al je vinkjes en notities gewist, maar de beroeppenlijst blijft intact.
+              </div>
+            </div>
+
+            <div class="faq-item">
+              <button onclick="toggleFaq(this)" class="w-full flex items-center justify-between text-left gap-3 group">
+                <span class="text-sm font-semibold text-slate-700 group-hover:text-blue-700 transition-colors">Kan ik het exportoverzicht delen met mijn begeleider?</span>
+                <svg class="faq-icon w-4 h-4 text-slate-400 flex-shrink-0 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+              </button>
+              <div class="faq-answer hidden mt-2 text-sm text-slate-600 leading-relaxed">
+                Ja. Klik op "⬇ Export mijn selectie" en gebruik in de afdrukdialoog de optie "Opslaan als PDF". Dit PDF-bestand kun je dan mailen of meenemen naar een gesprek met je begeleider of arbeidsadviseur.
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- CTA -->
+        <div class="text-center pb-4">
+          <button onclick="showPortal()"
+            class="inline-flex items-center gap-2 text-white px-8 py-3 rounded-2xl font-bold text-sm shadow-lg hover:opacity-90 transition"
+            style="background: linear-gradient(135deg, var(--blue) 0%, var(--mid) 100%);">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+            Ga naar het portaal
+          </button>
+        </div>
+
       </div>
     </section>
 
@@ -651,14 +877,35 @@
   function showPortal() {
     document.getElementById('portalView').classList.remove('hidden');
     document.getElementById('settingsView').classList.add('hidden');
+    document.getElementById('helpView').classList.add('hidden');
     document.getElementById('tabPortalBtn').style.cssText   = 'background:var(--blue);color:white;';
     document.getElementById('tabSettingsBtn').style.cssText = 'background:white;color:#374151;border:1px solid #e5e7eb;';
+    document.getElementById('tabHelpBtn').style.cssText     = 'background:white;color:#374151;border:1px solid #e5e7eb;';
   }
   function showSettings() {
     document.getElementById('settingsView').classList.remove('hidden');
     document.getElementById('portalView').classList.add('hidden');
+    document.getElementById('helpView').classList.add('hidden');
     document.getElementById('tabSettingsBtn').style.cssText = 'background:var(--blue);color:white;';
     document.getElementById('tabPortalBtn').style.cssText   = 'background:white;color:#374151;border:1px solid #e5e7eb;';
+    document.getElementById('tabHelpBtn').style.cssText     = 'background:white;color:#374151;border:1px solid #e5e7eb;';
+  }
+
+  function showHelp() {
+    document.getElementById('helpView').classList.remove('hidden');
+    document.getElementById('portalView').classList.add('hidden');
+    document.getElementById('settingsView').classList.add('hidden');
+    document.getElementById('tabHelpBtn').style.cssText     = 'background:var(--blue);color:white;';
+    document.getElementById('tabPortalBtn').style.cssText   = 'background:white;color:#374151;border:1px solid #e5e7eb;';
+    document.getElementById('tabSettingsBtn').style.cssText = 'background:white;color:#374151;border:1px solid #e5e7eb;';
+  }
+
+  function toggleFaq(btn) {
+    const answer = btn.nextElementSibling;
+    const icon   = btn.querySelector('.faq-icon');
+    const isOpen = !answer.classList.contains('hidden');
+    answer.classList.toggle('hidden', isOpen);
+    icon.style.transform = isOpen ? '' : 'rotate(180deg)';
   }
 
   // =====================================================================
@@ -708,7 +955,7 @@
   }
 
   function werkNlSearchUrl(name) {
-    return `https://www.werk.nl/werkzoekenden/beroepen-en-opleidingen/beroepen/zoeken?zoekterm=${encodeURIComponent(name)}`;
+    return `https://www.google.com/search?q=${encodeURIComponent(name)}`;
   }
 
   function normalizeWerkUrl(url){
@@ -1216,6 +1463,7 @@
   // =====================================================================
   function init() {
     showPortal();
+    document.getElementById('tabHelpBtn').style.cssText = 'background:white;color:#374151;border:1px solid #e5e7eb;';
     updateBadge();
     refreshSectorDropdown();
     filterContent();
