@@ -1,0 +1,295 @@
+/* Beroepen-portaal.nl look: cards op lichtgrijs, radius 12px, subtiele shadow */
+
+.kb-wrap{
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  color:var(--kb-text);
+  background:var(--kb-bg);
+  padding:16px;
+  border-radius:12px;
+}
+
+.kb-card{
+  background:#fff;
+  border:1px solid var(--kb-border);
+  border-radius:12px;
+  box-shadow:0 6px 18px rgba(15,23,42,.06);
+  padding:18px;
+}
+
+.kb-topbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:14px;
+}
+.kb-topbar-left{display:flex;align-items:center;gap:10px;}
+.kb-topbar-title{font-weight:700;color:var(--kb-blue);}
+.kb-emoji{font-size:20px;}
+.kb-topbar-right{display:flex;gap:8px;flex-wrap:wrap;}
+
+.kb-btn{
+  border:0;
+  border-radius:12px;
+  padding:10px 14px;
+  font-size:13px;
+  font-weight:700;
+  cursor:pointer;
+  text-decoration:none;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+}
+.kb-btn-primary{background:var(--kb-blue);color:#fff;}
+.kb-btn-orange{background:var(--kb-orange);color:#111827;}
+.kb-btn-ghost{background:#fff;border:1px solid var(--kb-border);color:#111827;}
+.kb-btn-sm{padding:8px 12px;font-weight:600;}
+
+.kb-banner{
+  background:linear-gradient(135deg,var(--kb-blue),var(--kb-mid));
+  border-radius:12px;
+  padding:16px 18px;
+  color:#fff;
+  margin-bottom:16px;
+}
+.kb-banner-title{font-weight:800;font-size:15px;margin-bottom:3px;}
+.kb-banner-text{font-size:13px;opacity:.85;}
+
+.kb-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;}
+.kb-stat{padding:14px;text-align:center;}
+.kb-stat-num{font-size:26px;font-weight:800;color:var(--kb-blue);}
+.kb-stat-num.kb-orange{color:var(--kb-orange);}
+.kb-stat-num.kb-purple{color:var(--kb-purple);}
+.kb-stat-num.kb-green{color:#16a34a;}
+.kb-stat-label{font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.05em;}
+
+.kb-card-title{font-weight:800;color:var(--kb-blue);font-size:15px;margin-bottom:14px;}
+.kb-field-label{display:block;font-size:12px;font-weight:700;color:#334155;margin-bottom:6px;}
+
+.kb-input,.kb-select,.kb-textarea{
+  width:100%;
+  padding:10px 12px;
+  border:1.5px solid var(--kb-border);
+  border-radius:12px;
+  font-size:13px;
+  font-family:inherit;
+  outline:none;
+  background:#fff;
+  color:var(--kb-text);
+}
+.kb-textarea{min-height:86px;resize:vertical;}
+
+.kb-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;}
+.kb-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
+.kb-grid-1{display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:14px;}
+
+.kb-actions{display:flex;justify-content:flex-end;gap:10px;align-items:center;}
+.kb-status{font-size:13px;min-height:18px;color:#64748b;margin-right:auto;}
+
+.kb-filter{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:0 0 14px;}
+.kb-filter-count{margin-left:auto;font-size:13px;color:#94a3b8;}
+
+.kb-entry{margin-bottom:12px;}
+.kb-entry-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;}
+.kb-entry-title{font-weight:800;color:var(--kb-blue);}
+.kb-entry-meta{font-size:12px;color:#64748b;}
+.kb-entry-body{margin-top:10px;font-size:13px;color:#0f172a;white-space:pre-wrap;}
+.kb-entry-actions{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;}
+.kb-linkbtn{background:#fff;border:1px solid var(--kb-border);border-radius:12px;padding:8px 10px;font-size:12px;font-weight:700;cursor:pointer;}
+.kb-linkbtn.danger{border-color:#fecaca;color:#b91c1c;}
+
+/* Print basis styles zitten verder onderaan (PDF / PRINT) */
+
+@media (max-width: 900px){
+  .kb-stats{grid-template-columns:1fr 1fr;}
+  .kb-grid-3{grid-template-columns:1fr;}
+  .kb-grid-2{grid-template-columns:1fr;}
+  /* Inputs: iOS auto-zoom voorkomen */
+  .kb-input,.kb-select,.kb-textarea,
+  input[type="text"],input[type="date"],input[type="number"],
+  input[type="email"],select,textarea{ font-size:16px !important; }
+  /* Filter select: niet overflow */
+  #lb-filter-type,.kb-filter select,.kb-filter input{ max-width:100%; width:100%; }
+  /* Begeleider zoekbalk: vaste breedte loslaten */
+  #begel-search-input,#begel-client{ max-width:100% !important; width:100%; }
+}
+
+@media (max-width: 600px){
+  .kb-wrap{ padding:10px; }
+  .kb-card{ padding:12px; }
+  .kb-stats{ grid-template-columns:1fr 1fr; }
+  .kb-topbar{ flex-direction:column; align-items:stretch; }
+  .kb-topbar-right{ justify-content:stretch; }
+  .kb-topbar-right .kb-btn{ flex:1; justify-content:center; }
+  .kb-btn{ width:100%; justify-content:center; }
+  .kb-filter{ flex-direction:column; align-items:stretch; }
+  .kb-filter-count{ margin-left:0; }
+  .kb-actions{ flex-direction:column; align-items:stretch; }
+  .kb-actions .kb-btn{ justify-content:center; }
+  .kb-modal-card{ padding:12px; }
+  .kb-sign-row{ flex-direction:column; }
+  .kb-sign-pad{ flex:1 1 auto; }
+  .kb-sign-meta{ flex:none; width:100%; }
+}
+
+
+.kb-pdf-actions{ display:flex; gap:10px; align-items:center; }
+
+.kb-sign-row{ display:flex; gap:16px; flex-wrap:wrap; }
+.kb-sign-pad{ flex: 1 1 300px; }
+#kb-sign-canvas{ width:100%; height:auto; background:#fff; border:1px solid #e2e8f0; border-radius:12px; }
+.kb-sign-actions{ display:flex; gap:10px; margin-top:10px; }
+.kb-sign-meta{ flex: 0 0 220px; }
+.kb-label{ display:block; font-weight:600; margin-bottom:6px; }
+.kb-input{ width:100%; border:1px solid #e2e8f0; border-radius:12px; padding:10px 12px; }
+.kb-sign-hint{ margin-top:8px; font-size:12px; color:#64748b; }
+.kb-sign-status{ margin-top:10px; font-size:13px; }
+.kb-sign-status.is-ok{ color:#16a34a; }
+.kb-sign-status.is-bad{ color:#dc2626; }
+
+
+/* =========================
+   PDF / PRINT
+========================= */
+
+.kb-print-header,
+.kb-print-footer,
+.kb-print-signature,
+.kb-print-signatures {
+  display: none;
+}
+
+/* Alleen voor print: deze stukken mogen nooit op het scherm zichtbaar zijn */
+.kb-only-print{ display:none; }
+
+@media print {
+
+  /* UPDATED IN 1.1.6 */
+/* Marges zoals in je print-screenshot */
+@page { size: A4; margin: 4mm 12mm 4mm 12mm; }
+
+html, body { margin: 0 !important; padding: 0 !important; background: #fff !important; }
+
+.kb-wrap{ padding:0 !important; background:#fff !important; border-radius:0 !important; }
+.kb-card{ padding:0 !important; border:0 !important; box-shadow:none !important; background:transparent !important; }
+
+.kb-no-print { display: none !important; }
+
+.kb-only-print{ display:block !important; }
+
+.kb-print-signature,
+.kb-print-signatures { display: block !important; }
+
+/* Pagina-tabel: kop/voettekst herhaalt op elke pagina (zoals Word) */
+.kb-page-table { display: table !important; width: 100%; border-collapse: collapse; }
+.kb-page-head-td { padding-bottom: 2px; }
+.kb-page-body-td { vertical-align: top; padding: 6px 0 4px; }
+.kb-page-foot-td { padding-top: 0; }
+
+/* Activiteiten-rijen nooit halverwege splitsen */
+.kb-print-table tr { break-inside: avoid; page-break-inside: avoid; }
+.kb-print-headrow{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  border-bottom: 2px solid #0047AB;
+  padding: 0 0 6px 0 !important;
+  margin: 0 !important;
+}
+.kb-print-brand { display:flex; align-items:center; gap:10px; }
+.kb-print-logo { max-height: 20px !important; max-width: 120px; object-fit: contain; }
+.kb-print-brandtext{ display:flex; flex-direction:column; gap:1px; }
+.kb-print-sitename{ font-weight:800; font-size: 13px; color:#0047AB; line-height: 1.1; }
+.kb-print-doc{ font-size: 8.5px; color:#334155; margin-top:1px; text-transform: uppercase; letter-spacing: .08em; }
+.kb-print-meta{ text-align:right; font-size: 9px; color:#334155; line-height:1.35; }
+.kb-print-org { font-weight:800; font-size: 13px; color:#0047AB; line-height: 1.1; }
+.kb-print-sub { font-size: 8.5px; color:#334155; margin-top:1px; text-transform: uppercase; letter-spacing: .08em; }
+.kb-print-right { text-align:right; display:flex; flex-direction:column; align-items:flex-end; justify-content:center; }
+.kb-print-name { font-weight:600; font-size: 10px; }
+.kb-print-date { font-size: 9px; color:#334155; }
+
+#kb-print-samenvatting { margin: 2px 0 4px 0 !important; }
+.kb-print-stats{
+  width:100% !important;
+  border-collapse:separate !important;
+  border-spacing:6px 0 !important;
+  table-layout:fixed !important;
+}
+.kb-print-stats td{ width:25% !important; padding:0 !important; }
+.kb-print-stat{ border:1px solid #e5e7eb; border-radius:12px; padding:6px 8px !important; text-align:center; }
+.kb-print-stat .n{ font-size:15px !important; font-weight:800; color:#0047AB; line-height:1.05; }
+.kb-print-stat .n.kb-orange{ color:#f59e0b; }
+.kb-print-stat .n.kb-purple{ color:#7c3aed; }
+.kb-print-stat .n.kb-green{ color:#16a34a; }
+.kb-print-stat .l{ margin-top:1px; font-size:8.5px !important; color:#64748b; letter-spacing:.08em; text-transform:uppercase; }
+
+.kb-print-title { font-weight:700; color:#0047AB; margin: 0 0 4px 0 !important; font-size: 10px; }
+
+.kb-print-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.kb-print-table th, .kb-print-table td { border-bottom: 1px solid #e2e8f0; padding: 5px 6px !important; font-size: 9.4px; vertical-align: middle; word-break: break-word; line-height: 1.4; }
+.kb-print-table th { text-align:left; font-size: 8.6px; text-transform: uppercase; color:#334155; letter-spacing: .02em; }
+.kb-print-table td:first-child { white-space: nowrap; }
+.kb-print-table .kb-num { text-align: right; }
+
+.kb-print-table th:nth-child(1), .kb-print-table td:nth-child(1) { width: 11%; }
+.kb-print-table th:nth-child(2), .kb-print-table td:nth-child(2) { width: 20%; }
+.kb-print-table th:nth-child(3), .kb-print-table td:nth-child(3) { width: 37%; }
+.kb-print-table th:nth-child(4), .kb-print-table td:nth-child(4) { width: 22%; }
+.kb-print-table th:nth-child(5), .kb-print-table td:nth-child(5) { width: 10%; text-align:right; }
+
+.kb-print-note { margin-top: 5px; font-size: 9px; color:#475569; }
+
+body.kb-print-summary .kb-print-footer { display:none !important; }
+body.kb-print-summary .kb-print-table th,
+body.kb-print-summary .kb-print-table td { padding: 2.5px 4px !important; font-size: 9.1px !important; }
+
+.kb-print-signature{
+  margin-top: 6px !important;
+  padding-top: 6px !important;
+  border-top: 2px solid #0047AB;
+  break-inside: avoid;
+  page-break-inside: avoid;
+  break-before: auto !important;
+  page-break-before: auto !important;
+}
+
+/* Begeleider PDF: handtekening (zelfde look, maar eigen markup) */
+.kb-print-sign{ margin-top: 6px !important; padding-top: 6px !important; border-top: 2px solid #0047AB; break-inside: avoid; page-break-inside: avoid; }
+.kb-print-signline{ display:flex; align-items:flex-end; justify-content:space-between; gap:12px; }
+.kb-print-signbox{ flex: 0 0 auto; border: 1px solid #cbd5e1; border-radius: 2px; min-height: 32px; padding: 4px 6px; display:flex; flex-direction:column; justify-content:space-between; max-width: 220px; }
+.kb-print-signlabel{ font-size: 8px; color:#64748b; text-transform:uppercase; letter-spacing:.08em; }
+.kb-print-sign-placeholder{ height: 18px; width: 100%; border-bottom: 1px solid #94a3b8; opacity: .9; }
+.kb-print-signbox img{ max-height: 22px; max-width: 200px; object-fit:contain; align-self:flex-start; }
+.kb-print-signdata{ flex: 0 0 160px; font-size: 9px; color:#334155; }
+.kb-print-sign-title { font-weight:700; color:#0047AB; margin-bottom: 3px; font-size: 10px; }
+.kb-print-sign-box { height: 28px !important; width: 100%; max-width: 100%; border: 1px solid #cbd5e1; border-radius: 2px; display:flex; align-items:center; justify-content:flex-start; padding: 0 8px; overflow:hidden; }
+.kb-print-sign-box img { max-height: 22px !important; max-width: 100%; object-fit:contain; }
+.kb-print-sign-meta { font-size: 7px; margin-top: 2px; color:#334155; }
+
+/* Client + begeleider handtekening (footer) */
+.kb-print-signatures{
+  padding-top: 4px !important;
+  border-top: 2px solid #0047AB;
+  display:flex !important;
+  gap:14px;
+  align-items:flex-start;
+  justify-content:space-between;
+}
+.kb-print-sign-col{ flex:1 1 0; min-width:0; }
+.kb-print-sign-label{ font-size: 7px; color:#64748b; text-transform:uppercase; letter-spacing:.08em; margin-bottom: 2px; }
+}
+
+
+/* Modal voor handtekening (niet zichtbaar op dashboard, alleen via knop) */
+.kb-modal{position:fixed;inset:0;z-index:99999;display:none;align-items:center;justify-content:center;}
+.kb-modal[aria-hidden="false"]{display:flex;}
+.kb-modal-overlay{position:absolute;inset:0;background:rgba(0,0,0,.45);}
+.kb-modal-card{position:relative;background:#fff;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.25);width:min(820px,92vw);max-height:90vh;overflow:auto;padding:16px;}
+.kb-modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.kb-modal-title{font-weight:700;}
+
+
+
+/* (oude print-signature styles stonden hier en zorgden dat handtekeningen op het dashboard zichtbaar werden)
+   -> alles wat bij de handtekening hoort staat nu alleen nog binnen @media print hierboven. */
